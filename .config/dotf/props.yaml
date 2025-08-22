@@ -1,0 +1,23 @@
+# 🔗 https://github.com/klapptnot/dotf
+
+shell_env:
+  BASH_ENV: $ echo -n ~/.bash_env
+  BUN_INSTALL: $ echo -n ~/.bun
+  FZF_DEFAULT_COMMAND: >
+    fd --type file --follow --hidden
+    --exclude '.{local,config,vscode,cargo,rustup,steam}/*'
+    --exclude '.{android,apklab,cache,erg,git,gk,gnupg,gradle,npm,pki,ssh,var,wine,zen,zoom}'
+    --exclude 'node_modules'
+
+  DEBUGINFOD_URLS: https://debuginfod.archlinux.org
+  GCC_COLORS: error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01
+  LS_COLORS: $ vivid generate 'catppuccin-mocha'
+  FZF_DEFAULT_OPTS: >
+    --color=fg:#d0d0d0,bg:,hl:#7143e6
+    --color=fg+:#d0d0d0,bg+:#262626,hl+:#00f2ff
+    --color=info:#afaf87,prompt:#d7005f,pointer:#af5fff
+    --color=marker:#87ff00,spinner:#af5fff,header:#87afaf
+    --wrap
+
+rofi:
+  theme: 'catppuccin-mocha'

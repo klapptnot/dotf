@@ -1,0 +1,6 @@
+#!/usr/bin/bash
+# Kill current window process
+# 🔗 https://github.com/klapptnot/dotf
+
+hyprctl -j activewindow | jq -rM '.pid' | \
+  xargs --no-run-if-empty kill

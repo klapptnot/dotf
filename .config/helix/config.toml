@@ -1,0 +1,66 @@
+theme = "catppuccin_mocha"
+
+[editor]
+line-number = "relative"
+
+[editor.cursor-shape]
+insert = "bar"
+normal = "block"
+select = "underline"
+
+[editor.file-picker]
+hidden = false
+
+[keys.normal]
+C-z = "undo"
+C-y = "redo"
+C-s = ":write"
+"C-space" = "buffer_picker"
+"C-/" = "toggle_comments"
+C-left = "move_prev_word_start"
+C-right = "move_next_word_start"
+C-S-i = ":format"
+
+[keys.insert]
+C-z = "undo"
+C-y = "redo"
+C-s = [":write", "normal_mode"]
+A-k = "move_line_up"
+A-j = "move_line_down"
+"C-/" = "toggle_comments"
+"C-backspace" = "delete_word_backward"
+"C-del" = "delete_word_forward"
+C-left = "move_prev_word_start"
+C-right = "move_next_word_start"
+
+[keys.select]
+"C-/" = "toggle_comments"
+
+[editor.statusline]
+left = ["mode", "spinner", "file-name", "read-only-indicator", "file-modification-indicator"]
+center = []
+right = ["diagnostics", "selections", "position", "file-encoding", "file-line-ending", "file-type"]
+separator = ""
+mode.normal = "NOR"
+mode.insert = "INS"
+mode.select = "SEL"
+
+[editor.auto-pairs]
+'(' = ')'
+'{' = '}'
+'[' = ']'
+'"' = '"'
+"'" = "'"
+'`' = '`'
+'<' = '>'
+
+[editor.whitespace]
+render = "all"
+
+[editor.whitespace.characters]
+space = "·"
+nbsp = "⍽"
+nnbsp = "␣"
+tab = "→"
+newline = "⏎"
+tabpad = "·" # Tabs will look like "→···" (depending on tab width)

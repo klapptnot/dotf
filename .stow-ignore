@@ -1,0 +1,11 @@
+# Stow ignore patterns (regex format)
+# Each line is a regex pattern applied to relative paths
+
+^README\.md$
+^dotf$
+^\.iconf\.sh$
+^\.stow-ignore\.sh$
+^misc.*
+^\.git.*
+^_.*
+^\.config/nushell/history.*

@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+
+# @A expands to either "name=val" or empty
+# check if set, even if set empty value
+[[ -z "${HYPRLAND_ENV_LOADED@A}" ]] && {
+  export HYPRLAND_ENV_LOADED=1
+
+  # XDG Base Directory Specification
+  export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME}/.config}"
+  export XDG_CACHE_HOME="${XDG_CACHE_HOME:-${HOME}/.cache}"
+  export XDG_DATA_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}"
+  export XDG_STATE_HOME="${XDG_STATE_HOME:-${HOME}/.local/state}"
+  export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/${USER_ID:-${UID}}}"
+
+  # XDG system directories
+  export XDG_DATA_DIRS="${XDG_DATA_DIRS:-${HOME}/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share}"
+  export XDG_CONFIG_DIRS="${XDG_CONFIG_DIRS:-/etc/xdg}"
+
+  # Hyprland session variables
+  export XDG_SESSION_TYPE="wayland"
+  export XDG_SESSION_DESKTOP="Hyprland"
+  export XDG_CURRENT_DESKTOP="Hyprland"
+  export XDG_BACKEND="wayland"
+  export GDK_BACKEND="wayland,x11"
+  export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-1}"
+
+  # Wayland application support
+  export MOZ_ENABLE_WAYLAND=1
+  export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+  export QT_QPA_PLATFORM="wayland;xcb"
+  export SDL_VIDEODRIVER=wayland
+  export CLUTTER_BACKEND=wayland
+  export _JAVA_AWT_WM_NONREPARENTING=1
+
+  # Cursor configuration
+  export XCURSOR_THEME="hatsune-miku-cursor"
+  export XCURSOR_SIZE=24
+
+  # Input method configuration
+  export XMODIFIERS="@im=fcitx"
+  export GLFW_IM_MODULE="ibus"
+  export QT_IM_MODULE="ibus"
+
+  # Qt configuration
+  export QT_QPA_PLATFORMTHEME="qt6ct"
+  export QT_AUTO_SCREEN_SCALE_FACTOR=1
+
+  # Electron Wayland hint
+  export ELECTRON_OZONE_PLATFORM_HINT="wayland"
+
+  # Bash environment
+  export BASH_ENV="${HOME}/.bash_env"
+
+  # export GTK_THEME="catppuccin-mocha-mauve-standard+default"
+
+  mkdir -p "${XDG_CONFIG_HOME}" "${XDG_CACHE_HOME}" "${XDG_DATA_HOME}" "${XDG_STATE_HOME}"
+
+  [ -f ~/.config/user-dirs.dirs ] && source ~/.config/user-dirs.dirs
+
+  # Dynamically collect all XDG_* variables
+  mapfile -t _XDG_ENV < <(compgen -v XDG_)
+  declare -x "${_XDG_ENV[@]}"
+
+  # Paths that are not meant to be everywhere
+  if [ -f ~/.config/.paths ]; then
+    while read -r line; do
+      [[ "${line}" == "#"* || -z "${line}" ]] && continue
+
+      if [[ "${line}" == '!'* ]]; then
+        read -r fp < <(realpath "${line:1}") || continue
+        export PATH="${fp}:${PATH}"
+      else
+        read -r fp < <(realpath "${line}") || continue
+        export PATH="${PATH}:${fp}"
+      fi
+    done < ~/.config/.paths
+    unset -v line fp
+  fi
+
+  systemctl --user import-environment \
+    "${_XDG_ENV[@]}" \
+    WAYLAND_DISPLAY \
+    MOZ_ENABLE_WAYLAND \
+    QT_QPA_PLATFORM \
+    QT_WAYLAND_DISABLE_WINDOWDECORATION \
+    SDL_VIDEODRIVER \
+    _JAVA_AWT_WM_NONREPARENTING \
+    CLUTTER_BACKEND \
+    GDK_BACKEND \
+    XCURSOR_THEME \
+    XCURSOR_SIZE \
+    XMODIFIERS \
+    GLFW_IM_MODULE \
+    QT_IM_MODULE \
+    QT_QPA_PLATFORMTHEME \
+    QT_AUTO_SCREEN_SCALE_FACTOR \
+    ELECTRON_OZONE_PLATFORM_HINT \
+    BASH_ENV \
+    PATH
+
+  if [[ "${1:-}" == "-v" ]] && [[ "${1:-}" == "--verbose" ]]; then
+    echo "✓ Hyprland environment configured"
+    echo "=== XDG Variables (${#_XDG_ENV[@]} total) ==="
+    declare -p "${_XDG_ENV[@]}"
+    echo ""
+    echo "=== Custom Variables ==="
+    echo "${XCURSOR_THEME@A}"
+    echo "${XCURSOR_SIZE@A}"
+    echo "${QT_QPA_PLATFORMTHEME@A}"
+    echo "${ELECTRON_OZONE_PLATFORM_HINT@A}"
+  fi
+}

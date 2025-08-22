@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+read -r USER_ID < <(id -u)
+read -r SESSION_ID < <(loginctl show-user "${USER}" -p Display --value)
+[[ -n "${SESSION_ID}" ]] && export XDG_SESSION_ID="${SESSION_ID}"
+unset SESSION_ID
+
+[ -f ~/.config/hypr/setup-env ] && source ~/.config/hypr/setup-env
+
+exec systemd-run --user --pty --wait --unit=hyprwm --slice=session-graphical.slice Hyprland
+

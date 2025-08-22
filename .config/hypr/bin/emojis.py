@@ -1,0 +1,40 @@
+#!/usr/bin/env python3
+# 🔗 https://github.com/klapptnot/dotf
+
+import select
+import sys
+
+try:
+    from emoji import EMOJI_DATA
+except ModuleNotFoundError:
+    print("Please install the emoji package:\n  pip install emoji")
+    sys.exit(1)
+except ImportError:
+    print("Please update the emoji package:\n  pip install --upgrade emoji")
+    sys.exit(1)
+
+
+def list_emojis():
+    for emoji, name in EMOJI_DATA.items():
+        name = name["en"]
+        print(f"{emoji} {name.lower()}\r{name}")
+
+
+def sanitize_emoji() -> str:
+    in_readable, _, _ = select.select([sys.stdin], [], [], 20)
+    return sys.stdin.read().strip().split()[0] if in_readable else ""
+
+
+def main():
+    argv = sys.argv[1:]
+    subc = argv[0] if len(argv) > 0 else "list"
+
+    if subc == "decode":
+        print(sanitize_emoji(), end="")
+        return
+
+    list_emojis()
+
+
+if __name__ == "__main__":
+    main()

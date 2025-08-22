@@ -1,0 +1,92 @@
+#!/usr/bin/bash
+# 🔗 https://github.com/klapptnot/dotf
+
+readonly SOCKET_TIMEOUT="${SOCKET_TIMEOUT:-5}"
+
+function main {
+  for cmd in hyprpaper gsettings hyprctl jq; do
+    if ! command -v "${cmd}" &> /dev/null; then
+      printf '%s is not an executable, or is not accessible\n' "${cmd}" >&2
+      return 1
+    fi
+  done
+
+  read -r theme_pref < <(gsettings get org.gnome.desktop.interface color-scheme)
+  [ "${theme_pref}" != "'default'" ] && theme_pref="picture-uri-dark" || theme_pref="picture-uri"
+
+  if [ "${1}" == 'query' ]; then
+    read -r gnome_bg < <(gsettings get org.gnome.desktop.background "${theme_pref}")
+    # from 'file:///path/to/file' to /path/to/file
+    printf '%s\n' "${gnome_bg:8:-1}"
+    return
+  fi
+
+  if ! wait-for-socket; then
+    printf 'Use "SOCKET_TIMEOUT=10 use-gnome-wallpaper [params]" to change timeout\n'
+    printf 'hyprpaper socket is not found after %s seconds. Exiting...\n' "${SOCKET_TIMEOUT}" 1>&2
+    return
+  fi
+
+  # Get a list of all monitors available
+  mapfile -t monitors < <(hyprctl -j monitors all | jq -rM '.[] | .name')
+
+  local curr_back="<none>"
+  while true; do
+    read -r gnome_bg < <(gsettings get org.gnome.desktop.background "${theme_pref}") || {
+      printf "Failed to read gsettings background\n" >&2
+      sleep 2
+      continue
+    }
+
+    # from 'file:///path/to/file' to /path/to/file
+    local gnome_bg="${gnome_bg:8:-1}"
+
+    # Skip invalid backgrounds
+    if [[ ! -f "${gnome_bg}" ]]; then
+      printf "Background file doesn't exist: %s\n" "${gnome_bg}" >&2
+      sleep 2
+      continue
+    fi
+
+    if [ "${gnome_bg}" != "${curr_back}" ]; then
+      # Preload new wallpaper first
+      if ! hyprctl-wrapper hyprpaper preload "${gnome_bg}"; then
+        printf "Failed to preload wallpaper\n" >&2
+        sleep 2
+        continue
+      fi
+
+      # Set it for all monitors
+      for monitor in "${monitors[@]}"; do
+        if ! hyprctl-wrapper hyprpaper wallpaper "${monitor}, ${gnome_bg}"; then
+          printf "Failed to set wallpaper for monitor: %s\n" "${monitor}" >&2
+          continue
+        fi
+      done
+
+      # Unload old wallpaper if it was loaded before
+      if [ "${curr_back}" != "<none>" ]; then
+        hyprctl-wrapper hyprpaper unload "${curr_back}" || true
+      fi
+
+      curr_back="${gnome_bg}"
+    fi
+
+    sleep 1
+  done
+}
+
+function wait-for-socket {
+  for ((i = 0; i <= SOCKET_TIMEOUT; i++)); do
+    test -S "${XDG_RUNTIME_DIR}/hypr/${HYPRLAND_INSTANCE_SIGNATURE}/.hyprpaper.sock" && return 0
+    sleep 0.1
+  done
+  return 1
+}
+
+function hyprctl-wrapper {
+  printf '$ hyprctl %s\n' "${*@Q}"
+  hyprctl "${@}"
+} 2>&1
+
+main "${@}"

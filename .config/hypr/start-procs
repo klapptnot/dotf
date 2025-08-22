@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+# reset first, to only keep running ones (if nor running, they disappear)
+# because they are also transient, started with `systemd-run`
+systemctl --user reset-failed 'hypr-autostart-*' 2> /dev/null
+
+if [ "${1}" == 'stop' ]; then
+  systemctl --quiet --user is-active --all 'hypr-autostart-*' \
+    && systemctl --user stop 'hypr-autostart-*'
+  exit "${?}"
+fi
+
+# do not start any unit if some units are running
+systemctl --quiet --user is-active --all 'hypr-autostart-*' && exit 0
+
+systemctl --user start \
+  --property=BindsTo=hyprwm.service \
+  --property=After=hyprwm.service \
+  vicinae.service
+
+gsettings set org.gnome.desktop.interface gtk-theme "catppuccin-mocha-mauve-standard+default"
+gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"
+gsettings set org.gnome.desktop.interface cursor-theme "hatsune-miku-cursor"
+gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark"
+
+function run_bg {
+  {
+    read -r rsm < <(rsum -l 8 -c 'a-z0-9')
+    local unit_name="hypr-autostart-${rsm}"
+
+    local -a systemd_args=(
+      --user
+      --property=BindsTo=hyprwm.service
+      --property=After=hyprwm.service
+      --slice=background-graphical.slice
+      --unit="${unit_name}"
+    )
+
+    if [[ "${1}" == "@gnome" ]]; then
+      shift
+      systemd_args+=(
+        --setenv=XDG_CURRENT_DESKTOP=GNOME
+        --setenv=XDG_SESSION_DESKTOP=gnome
+      )
+    fi
+
+    systemd-run "${systemd_args[@]}" -- "${@}" &> /dev/null
+  } &
+}
+
+run_bg hyprpaper
+run_bg waybar
+run_bg fcitx5
+run_bg nm-applet
+run_bg swaync
+run_bg hypridle
+run_bg lbagtk #--daemon
+
+# as gnome for right-click wallpaper
+run_bg @gnome thunar --daemon
+
+run_bg gnome-keyring-daemon --start --components=secrets
+
+if [ -x /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 ]; then
+  run_bg /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
+elif [ -f /usr/lib/polkit-kde-authentication-agent-1 ]; then
+  run_bg /usr/lib/polkit-kde-authentication-agent-1
+fi
+
+run_bg ~/.config/hypr/bin/medialock backend
+run_bg ~/.config/hypr/bin/adopt-gnome-bg

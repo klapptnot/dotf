@@ -1,0 +1,123 @@
+:root {
+  --roundness: 8px;
+}
+
+/* Color palette */
+@import "./colors.css";
+
+* {
+  all: unset;
+  font-size: 14px;
+  font-family: "Plus Jakarta Sans", "Ubuntu Nerd Font", sans-serif;
+}
+
+.battery-alert-window {
+  background-color: var(--base);
+  border-radius: 16px;
+  border: 2px solid var(--accent);
+  box-shadow: 0 8px 32px alpha(var(--crust), 0.8);
+}
+
+.battery-alert-window decoration {
+  background-color: var(--base);
+  border-radius: 16px 16px 0 0;
+}
+
+.battery-alert-main-container {
+  background-color: transparent;
+  padding: 15px 10px 15px 10px;
+  border-radius: 14px;
+}
+
+.battery-alert-label-container {
+  background-color: var(--surface0);
+  border-radius: 12px;
+  padding: 15px 10px 15px 10px;
+  margin-bottom: 20px;
+  border: 1px solid var(--surface1);
+}
+
+.battery-alert-header {
+  color: var(--red);
+  font-weight: bold;
+  font-size: 18px;
+  text-shadow: 0 1px 2px alpha(var(--crust), 0.5);
+}
+
+.battery-alert-info {
+  color: var(--text);
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.battery-alert-button-container {
+  background-color: transparent;
+  border-radius: 8px;
+}
+
+.battery-alert-action-btn {
+  background-color: var(--peach);
+  color: var(--mantle);
+  border: 2px solid var(--yellow);
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 18px;
+  font-weight: 500;
+  transition: all 200ms ease;
+}
+
+.battery-alert-action-btn:hover {
+  background-color: var(--yellow);
+  border-color: var(--peach);
+  color: var(--crust);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px alpha(var(--peach), 0.3);
+}
+
+.battery-alert-action-btn:active {
+  background-color: var(--maroon);
+  transform: translateY(0);
+  box-shadow: 0 2px 6px alpha(var(--peach), 0.2);
+}
+
+.battery-alert-close-btn {
+  background-color: var(--accent);
+  color: var(--crust);
+  /* border: 2px solid var(--accent); */
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 18px;
+  font-weight: 500;
+  transition: all 200ms ease;
+}
+
+.battery-alert-close-btn:hover {
+  background-color: var(--ground);
+  /* border-color: var(--ground); */
+  color: var(--mantle);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px alpha(var(--accent), 0.3);
+}
+
+.battery-alert-close-btn:active {
+  background-color: var(--sapphire);
+  transform: translateY(0);
+  box-shadow: 0 2px 6px alpha(var(--accent), 0.2);
+}
+
+.battery-alert-action-btn:disabled,
+.battery-alert-close-btn:disabled {
+  background-color: var(--surface0);
+  color: var(--overlay0);
+  border-color: var(--surface1);
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
+
+.battery-alert-label-container:hover {
+  border-color: var(--surface2);
+  background-color: var(--surface1);
+  transition: all 200ms ease;
+}
+

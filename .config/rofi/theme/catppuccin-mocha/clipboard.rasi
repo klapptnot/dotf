@@ -1,0 +1,110 @@
+configuration {
+  font: "CaskaydiaCove Nerd Font 14";
+  show-icons: false;
+  hide-scrollbar: true;
+  sidebar-mode: false;
+  fake-transparency: true;
+}
+
+@theme "colors"
+
+window {
+  transparency: "real";
+  width: 600px;
+  height: 400px;
+  border: 2px;
+  border-color: @border;
+  border-radius: 12px;
+  background-color: @background;
+  location: center;
+  anchor: center;
+}
+
+mainbox {
+  background-color: @transparent;
+  padding: 12px;
+  spacing: 8px;
+}
+
+inputbar {
+  children: [entry];
+  background-color: @background-alt;
+  border-radius: 8px;
+  border-color: @border;
+  border: 1px;
+  padding: 12px 16px;
+  margin: 0px 0px 8px 0px;
+}
+
+entry {
+  text-color: @foreground;
+  background-color: @transparent;
+  placeholder: "🔍 Search clipboard history...";
+  placeholder-color: @foreground-alt;
+  cursor: text;
+}
+
+listview {
+  background-color: @transparent;
+  columns: 1;
+  lines: 8;
+  spacing: 4px;
+  cycle: true;
+  dynamic: true;
+  layout: vertical;
+}
+
+element {
+  padding: 12px 16px;
+  background-color: @transparent;
+  text-color: @foreground;
+  border-radius: 8px;
+  spacing: 8px;
+}
+
+element normal.normal {
+  background-color: @transparent;
+  text-color: @foreground;
+}
+
+element normal.urgent {
+  background-color: @urgent;
+  text-color: @background;
+}
+
+element normal.active {
+  background-color: @active;
+  text-color: @background;
+}
+
+element selected.normal {
+  background-color: @selected;
+  text-color: @selected-fg;
+  border: 1px;
+  border-color: @border;
+}
+
+element selected.urgent {
+  background-color: @urgent;
+  text-color: @background;
+}
+
+element selected.active {
+  background-color: @active;
+  text-color: @background;
+}
+
+element-text {
+  background-color: inherit;
+  text-color: inherit;
+  highlight: @selected;
+  cursor: inherit;
+}
+
+scrollbar {
+  width: 4px;
+  border: 0px;
+  handle-color: @selected;
+  handle-width: 8px;
+  padding: 0px;
+}

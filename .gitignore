@@ -1,0 +1,8 @@
+# Any of nushell history files may ...
+.config/nushell/history*
+# beacuse of auth?
+.gitconfig
+# Kind of hidden files
+**/_*
+**/._*
+

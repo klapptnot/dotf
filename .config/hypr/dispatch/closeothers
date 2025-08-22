@@ -1,0 +1,9 @@
+#!/usr/bin/bash
+# Close all other windows in workspace
+# 🔗 https://github.com/klapptnot/dotf
+
+jq -rM --null-input \
+  --argjson c "$(hyprctl clients -j)" \
+  --argjson w "$(hyprctl activeworkspace -j)" \
+  '$c[] | select(.workspace.id == $w.id) | select(.focusHistoryID != 0) | "address:" + .address' | \
+  xargs --no-run-if-empty --max-args 1 hyprctl dispatch closewindow
