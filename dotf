@@ -1,0 +1,436 @@
+#!/usr/bin/bash
+# shellcheck disable=SC1091
+
+include barg.sh || exit
+include logger.sh || exit
+include spinner.sh || exit
+
+function confirm_or_exit {
+  printf '%b' "${1}"
+  read -r -n 1 REPLY
+  echo
+  if ! [[ "${REPLY}" =~ ^(Y|y)$ ]]; then
+    log i "Cancelled by user"
+    exit
+  fi
+}
+
+function run_or_exit {
+  if ! "${@}"; then
+    spinner.drop
+    exit 1
+  fi
+}
+
+function update_sources {
+  cd "${MELOC}" || exit
+  if ! git_version_gen > /dev/null; then
+    log i "Already up to date"
+    return
+  fi
+
+  spinner.start "Updating files"
+
+  run_or_exit git restore "${MELOC}"
+  run_or_exit git pull --rebase
+
+  log i "Successfully pulled new changes"
+
+  # Source config for updates
+  source "${MELOC}/.iconf.sh"
+  spinner.stop
+
+  return
+}
+
+function install_packages {
+  if ${DOTF_INSTALL_NO_PKGS}; then
+    log i "User rejected packages installation"
+    return
+  fi
+
+  spinner.start "Installing packages..."
+  if [ -z "${TERMUX_APP__PACKAGE_NAME@A}" ]; then
+    sudo pacman -Syy --noconfirm --needed "${pacman_pkgs[@]}"
+
+    # Install Yet Another Yogurt
+    if ! command -v yay > /dev/null; then
+      spinner.update "Installing yay (Yet Another Yogurt)"
+      local here="${PWD}"
+      local yay_folder
+
+      read -r yay_folder < <(mktemp --directory)
+      run_or_exit git clone https://aur.archlinux.org/yay.git "${yay_folder}"
+
+      run_or_exit cd "${yay_folder}"
+      run_or_exit makepkg -si
+
+      run_or_exit cd "${here}"
+      rm -rf "${yay_folder:?Path expected}"
+    fi
+
+    spinner.update "Installing AUR packages with yay"
+    yay -Syy --answerclean All --answerdiff None --noconfirm --needed "${yay_pkgs[@]}"
+
+    spinner.stop
+  fi
+}
+
+function __bgm_validate_environment {
+  if ! command -v yq &> /dev/null; then
+    log e 'Command `''yq` is required, install it first'
+    return 1
+  fi
+
+  if [ ! -d "${DOTF_BGM_ROOT_FOLDER}" ]; then
+    log e 'Main folder does not exist or is inaccessible'
+    return 1
+  fi
+
+  if [ ! -f "${DOTF_BGM_INDEX_FILE}" ]; then
+    log e 'Index file does not exist or is inaccessible'
+    return 1
+  fi
+
+  if ! ${DOTF_BGM_ALL_GROUPS} && ((DOTF_EXTRA_ARGS_COUNT < 1)); then
+    log e 'Pass group names as arguments, or pass the `''--all` flag'
+    return 1
+  fi
+
+  return 0
+}
+
+function __bgm_validate_groups {
+  local -n groups_ref="${1}"
+
+  mapfile -t groups_ref < <(yq -rM .__groups[] "${DOTF_BGM_INDEX_FILE}")
+
+  if ! ${DOTF_BGM_ALL_GROUPS}; then
+    for ((i = 0; i < DOTF_EXTRA_ARGS_COUNT; i++)); do
+      if ! barg::is_in_arr "${DOTF_EXTRA_ARGS[i]}" "${groups_ref[@]}"; then
+        log e 'The group "%s" does not exist' "${DOTF_EXTRA_ARGS[i]}"
+      fi
+    done
+  fi
+
+  return 0
+}
+
+function __bgm_should_process_group {
+  local grp="${1}"
+
+  if ! ${DOTF_BGM_ALL_GROUPS} && ! barg::is_in_arr "${grp}" "${DOTF_EXTRA_ARGS[@]}"; then
+    return 1
+  fi
+
+  return 0
+}
+
+function bgm_list_backgrounds {
+  local __groups=()
+
+  __bgm_validate_environment || return 1
+  __bgm_validate_groups __groups || return 1
+  spinner.start "Processing index values"
+  local lines=()
+  for grp in "${__groups[@]}"; do
+    __bgm_should_process_group "${grp}" || continue
+
+    mapfile -t it_name < <(yq -rM ".${grp}[] | .name" "${DOTF_BGM_INDEX_FILE}")
+    local total="${#it_name[@]}"
+    local downloaded=0
+    for name in "${it_name[@]}"; do
+      [ -e "${DOTF_BGM_ROOT_FOLDER}/${name}" ] && ((downloaded++))
+    done
+    lines+=("${grp}" "${downloaded}/${total}")
+  done
+  spinner.stop
+
+  ((${#lines[@]} > 0)) && printf '%-20s %7s background(s) downloaded\n' "${lines[@]}"
+}
+
+function bgm_download_backgrounds {
+  local __groups=()
+
+  __bgm_validate_environment || return 1
+  __bgm_validate_groups __groups || return 1
+
+  local stop_me=false
+  trap "stop_me=true" SIGINT SIGTERM
+
+  declare -A g_total=()
+  for grp in "${__groups[@]}"; do
+    __bgm_should_process_group "${grp}" || continue
+
+    mapfile -t it_name < <(yq -rM ".${grp}[] | .name" "${DOTF_BGM_INDEX_FILE}")
+    mapfile -t it_link < <(yq -rM ".${grp}[] | .link" "${DOTF_BGM_INDEX_FILE}")
+    local item_count="${#it_link[@]}"
+    local missing=()
+    g_total["${grp}"]=0
+
+    for ((i = 0; i < item_count; i++)); do
+      if [ ! -e "${DOTF_BGM_ROOT_FOLDER}/${it_name[i]}" ]; then
+        missing+=("${i}")
+        continue
+      fi
+      if ${DOTF_FORCE_OPERATION}; then
+        log i 'File found, removing %s' "${it_name[i]}"
+        rm "${DOTF_BGM_ROOT_FOLDER:?}/${it_name[i]}" || continue
+        missing+=("${i}")
+      fi
+    done
+
+    local to_download="${#missing[@]}"
+    local total_downloaded=0
+    local max_jobs=4
+    local job_pids=()
+
+    # Create a temporary directory for status tracking
+    local temp_dir
+    read -r temp_dir < <(mktemp -d)
+
+    spinner.start "Downloading files... 0/${to_download}"
+
+    for ((i = 0; i < to_download; i++)); do
+      ${stop_me} && break
+      local index="${missing[i]}"
+
+      while [ ${#job_pids[@]} -ge ${max_jobs} ]; do
+        ${stop_me} && break
+        for j in "${!job_pids[@]}"; do
+          ${stop_me} && break
+          if ! kill -0 "${job_pids[j]}" 2> /dev/null; then
+            wait "${job_pids[j]}"
+            if [ -f "${temp_dir}/${job_pids[j]}" ]; then
+              ((total_downloaded++))
+              spinner.update "Downloading files... ${total_downloaded}/${to_download}"
+            fi
+            unset "job_pids[${j}]"
+          fi
+        done
+        job_pids=("${job_pids[@]}") # Reindex array
+        sleep 0.1
+      done
+
+      # Start download in background
+      {
+        log d 'Downloading %s...' "${it_name[index]}"
+        if wget -O "${DOTF_BGM_ROOT_FOLDER}/${it_name[index]}" "${it_link[index]}" &> /dev/null; then
+          log d 'Downloaded successfully %s' "${it_name[index]}"
+          touch "${temp_dir}/${BASHPID}"
+        else
+          log e 'Failed to download %s' "${it_link[index]}"
+        fi
+      } &
+
+      job_pids+=(${!})
+    done
+
+    # Wait for all remaining jobs to complete
+    for pid in "${job_pids[@]}"; do
+      wait "${pid}"
+      if [ -f "${temp_dir}/${pid}" ]; then
+        ((total_downloaded++))
+        spinner.update "Downloading files... ${total_downloaded}/${to_download}"
+      fi
+    done
+
+    spinner.stop
+    g_total["${grp}"]="${total_downloaded}/${to_download}"
+  done
+
+  # reg path
+  [ -d "${temp_dir}" ] && rm -rf "${temp_dir}"
+
+  for grp in "${!g_total[@]}"; do
+    log i 'Group %s: %s downloaded' "${grp}" "${g_total["${grp}"]}"
+  done
+}
+
+function bgm_remove_backgrounds {
+  local __groups=()
+
+  __bgm_validate_environment || return 1
+  __bgm_validate_groups __groups || return 1
+
+  local total_rmed=0
+  for grp in "${__groups[@]}"; do
+    __bgm_should_process_group "${grp}" || continue
+
+    mapfile -t it_name < <(yq -rM ".${grp}[] | .name" "${DOTF_BGM_INDEX_FILE}")
+    local item_count="${#it_name[@]}"
+
+    for ((i = 0; i < item_count; i++)); do
+      if [ -e "${DOTF_BGM_ROOT_FOLDER}/${it_name[i]}" ]; then
+        log d 'Removing %s' "${it_name[i]}"
+        rm -f "${DOTF_BGM_ROOT_FOLDER:?}/${it_name[i]}" || continue
+        ((total_rmed++))
+      fi
+    done
+  done
+
+  log i "Removed %d files" "${total_rmed}"
+}
+
+function backgrounds_manager {
+  case "${DOTF_BGM_MODE}" in
+    list)
+      bgm_list_backgrounds
+      ;;
+    download)
+      bgm_download_backgrounds
+      ;;
+    remove)
+      bgm_remove_backgrounds
+      ;;
+  esac
+}
+
+# shellcheck disable=SC2155
+function git_version_gen {
+  git fetch &> /dev/null
+  read -r remote < <(git rev-parse --abbrev-ref --symbolic-full-name '@{u}')
+
+  read -r local_c < <(git rev-list --count HEAD)
+  read -r local_h < <(git rev-parse HEAD)
+  read -r remote_c < <(git rev-list --count "${remote}")
+  read -r remote_h < <(git rev-parse "${remote}")
+
+  read -r merge_base < <(git merge-base "${remote_h}" "${local_h}")
+  read -r new_commits < <(git rev-list --count "${merge_base}".."${remote_h}")
+
+  printf '%d\n%s\n%s\n' "${new_commits}" "${remote_c}-${remote_h:0:7}" "${local_c}-${local_h:0:7}"
+  ((new_commits > 0)) && return 0 || return 1
+}
+
+function main {
+  read -r MEPATH < <(realpath "${0}")
+  readonly MELOC="${MEPATH%/*}"
+  # shellcheck disable=SC2034
+  declare -g LOGGER_LEVEL=4
+  readonly MENAME="${MEPATH##*/}"
+
+  cd "${MELOC}" || exit 1
+
+  local _epilog_lines=(
+    '{acc}Notes\x1b[0m:'
+    '  The script will detect the installed applications and configure them accordingly.'
+    '  You can customize the installation process by editing the config file.\n'
+    '{acc}Supported shells\x1b[0m:'
+    '  bash, nushell, fish, zsh'
+    '{acc}Supported DEs\x1b[0m:'
+    '  Hyprland\n'
+    'By \x1b[38;5;99mKlapptnot\x1b[0m \x1b[38;5;117mhttps://github.com/Klapptnot\x1b[0m'
+  )
+
+  barg::parse "${@}" << BARG
+  #[always]
+  meta {
+    extargs: 'DOTF_EXTRA_ARGS'
+    summary: 'Installer script'
+    epilogs: '_epilog_lines'
+    reqcmds: true
+    helpmsg: true
+  }
+
+  commands {
+    setup: 'Set all configs ready'
+    remove: 'Remove added configs'
+    bgmgr: 'Manage background collections'
+    config: 'Configure dotfiles settings'
+    version: 'Show version information'
+  }
+
+  f/force :flag => DOTF_FORCE_OPERATION "Force any required operation"
+
+  @setup {
+    r/reset: "reset"
+    u/update: "update"
+  } "normal" => DOTF_INSTALL_MODE "Installation mode (normal, reset, update)"
+
+  @setup g/geoinf :str => DOTF_INSTALL_USER_GEOINFO "User's city and country name"
+  @setup n/no-pkgs :flag => DOTF_INSTALL_NO_PKGS "Skip packages installation process"
+  @setup R/reload :flag => DOTF_RELOAD_WM "Force WM to reload config"
+
+  @bgmgr ! {
+    l/list: "list"
+    g/get: "download"
+    r/remove: "remove"
+  } "list" => DOTF_BGM_MODE "Background management mode (list, download, remove)"
+  @bgmgr i/index :str "${HOME}/.config/dotf/backgrounds.yaml" => DOTF_BGM_INDEX_FILE "Index file path"
+  @bgmgr d/bgmdir :str "${HOME}/.local/share/backgrounds" => DOTF_BGM_ROOT_FOLDER "Backgrounds directory path"
+  @bgmgr a/all :flag => DOTF_BGM_ALL_GROUPS "Select all background groups"
+BARG
+
+  # barg::unload
+
+  # mapfile -t vars < <(compgen -v DOTF_)
+  # declare -p "${vars[@]}"
+  # exit
+
+  ${DOTF_FORCE_OPERATION} && log w "Any operation can be forced"
+
+  declare -g pacman_pkgs=()
+  declare -g yay_pkgs=()
+
+  # Installation config
+  # shellcheck disable=SC1091
+  source "${MELOC}/.iconf.sh"
+
+  spinner.init
+
+  case "${BARG_SUBCOMMAND}" in
+    setup)
+      case "${DOTF_INSTALL_MODE}" in
+        reset)
+          confirm_or_exit '\x1b[38;5;87mAll local changes will be discarded, continue anyways?\x1b[0m [Yn]: '
+          git reset "${MELOC}"
+          ;;
+        update)
+          confirm_or_exit '\x1b[38;5;87mAll local changes will be discarded, continue anyways?\x1b[0m [Yn]: '
+          update_sources
+          bstow --restow --force --verbose 5 --target ~ --filter ./.stow-ignore.sh
+          install_packages
+          post_install
+          ;;
+        *)
+          bstow --stow --force --verbose 5 --target ~ --filter ./.stow-ignore.sh
+          install_packages
+          post_install
+          ;;
+      esac
+      ${DOTF_RELOAD_WM} && hyprctl reload &> /dev/null
+      ;;
+    remove)
+      bstow --delete --force --verbose 5 --target ~ --filter ./.stow-ignore.sh
+      post_remove
+      ;;
+    config)
+      if ! command -v nvim &> /dev/null; then
+        log e "Neovim not installed or not in PATH"
+        exit
+      fi
+      nvim "${MELOC}/.iconf.sh"
+      ;;
+    bgmgr) backgrounds_manager ;;
+    version)
+      spinner.start "Gathering info from remote repo"
+      {
+        read -r new_commits
+        read -r remote_version
+        read -r local_version
+      } < <(git_version_gen)
+      spinner.stop
+
+      log i 'klapptnot/dotf %s' "${local_version}"
+      if ((new_commits > 0)); then
+        log i '\nUpdates available (%s), to update run `''%s install --update`' "${remote_version}" "${MENAME}"
+      fi
+      ;;
+  esac
+
+  spinner.drop
+  return 0
+}
+
+main "${@}"

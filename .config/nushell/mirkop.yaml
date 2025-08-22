@@ -1,0 +1,43 @@
+# 🔗 https://github.com/klapptnot/dotf
+
+# Default config for a simple but nice shell prompt
+
+str:
+  user: <user>
+  host: <host>
+  char:
+    root: "⚡"
+    else: "►"
+  from:
+    base: " at "
+    sshd: " in "
+
+collapse: 120
+date_fmt: "%X"
+rdircolor: true
+transient: true
+
+color:
+  host:
+    fg: "#9b5ced"
+  user:
+    fg: "#bd93f9"
+  error:
+    fg: "#de4b4b"
+  dir:
+    fg: "#e8e8e8"
+  normal:
+    fg: "#e8e8e8"
+  from:
+    fg: "#e8e8e8"
+  jobs:
+    fg: "#ff79c6"
+  git:
+    i:
+      fg: "#54ff9f"
+    d:
+      fg: "#ff7f7f"
+    a:
+      fg: "#e0ffff"
+    s:
+      fg: "#e8e8e8"

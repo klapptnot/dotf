@@ -1,0 +1,62 @@
+* {
+  background-image: none;
+  font-size: 15px;
+}
+
+window {
+  background-color: transparent;
+}
+
+button {
+  font-family: 'Plus Jakarta Sans';
+  color: #cba6f7;
+  background-color: rgba(17, 17, 27, 0.4);
+  outline-style: none;
+  border: none;
+  border-width: 0px;
+  margin: 5px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 20%;
+  border-radius: 8px;
+  box-shadow: none;
+  text-shadow: none;
+  animation: gradient_f 20s ease-in infinite;
+  transition: all 0.3s cubic-bezier(.55, 0.0, .28, 1.682);
+}
+
+button:focus {
+  background-color: rgba(17, 17, 28, 0.6);
+}
+
+button:hover {
+  background-color: rgba(17, 17, 27, 0.8);
+  background-size: 30%;
+  animation: gradient_f 20s ease-in infinite;
+  transition: all 0.3s cubic-bezier(.55, 0.0, .28, 1.682);
+  margin: 5px 50px 5px 50px;
+}
+
+#lock {
+  background-image: url("./icons/lock_512px.png");
+}
+
+#logout {
+  background-image: url("./icons/logout_512px.png");
+}
+
+#suspend {
+  background-image: url("./icons/eco_512px.png");
+}
+
+#shutdown {
+  background-image: url("./icons/power_settings_new_512px.png");
+}
+
+#hibernate {
+  background-image: url("./icons/bedtime_512px.png");
+}
+
+#reboot {
+  background-image: url("./icons/restart_alt_512px.png");
+}

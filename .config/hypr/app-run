@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+declare -ri max_tries=5
+declare -i tries=0
+
+systemctl --user reset-failed 'hypr-uproc-*' 2> /dev/null
+while ((tries < max_tries)); do
+  read -r rsm < <(rsum -l 8 -c 'a-z0-9')
+  unit_name="hypr-uproc-${rsm}"
+
+  systemctl --quiet --user is-active --all "${unit_name}" || break
+  ((tries++))
+done
+
+if ((tries == max_tries)); then
+  echo "Could not find free unit name after ${max_tries} attempts." >&2
+  exit 1
+fi
+
+exec systemd-run --user --scope \
+  --slice=app-graphical.slice \
+  --unit="${unit_name}" \
+  -- "${@}"
+

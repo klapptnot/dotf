@@ -1,0 +1,53 @@
+css_reload = false
+terminal = "kitty"
+launch_prefix = "z3-run"
+
+[[apps]]
+name = "WhatsApp"
+gend = "Messaging and voice call client (Web)"
+desc = "Messaging and voice calling platform linked to your phone"
+exec = "browser --app=https://web.whatsapp.com --name=WhatsApp --class=chrome:whatsapp"
+icon = "whatsapp"
+
+[[apps]]
+name = "Discord"
+gend = "Voice and Text Chat. (Web)"
+desc = "All-in-one voice and text chat for gamers that's free and secure."
+exec = "browser --app=https://discord.com/app --name=Discord --class=chrome:discord"
+icon = "discord"
+
+[[apps]]
+name = "YouTube"
+gend = "Video-sharing. (Web)"
+desc = "Video-sharing platform for entertainment, education, and creators worldwide"
+exec = "browser --app=https://youtube.com --name=YouTube --class=chrome:youtube"
+icon = "youtube"
+
+[[apps]]
+name = "Google Translate"
+gend = "Translation tool. (Web)"
+desc = "Language translation tool supporting text, websites, and documents"
+exec = "browser --incognito --app=https://translate.google.com --name='Google Translate' --class=chrome:gtranslate"
+icon = "google-translate"
+
+[[apps]]
+name = "Spotify"
+gend = "Music streaming. (Web)"
+desc = "Music streaming service with personalized playlists and podcasts"
+exec = "browser --app=https://open.spotify.com  --name=Spotify --class=chrome:spotify"
+icon = "spotify"
+
+[[apps]]
+name = "YouTube Music"
+gend = "Music streaming. (Web)"
+desc = "Music streaming service powered by YouTube with curated and trending tracks"
+exec = "browser --app=https://music.youtube.com --name='YT Music' --class=chrome:ytmusic"
+icon = "youtube-music"
+
+[[apps]]
+name = "Zoom"
+gend = "Video conferencing. (Web)"
+desc = "Video conferencing and collaboration platform for meetings and webinars"
+exec = "browser --app=https://app.zoom.us/wc  --name='Zoom Meetings' --class=chrome:zoomus"
+icon = "Zoom"
+

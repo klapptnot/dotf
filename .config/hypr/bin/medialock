@@ -1,0 +1,272 @@
+#!/usr/bin/bash
+# 🔗 https://github.com/klapptnot/dotf
+
+# Playing media info manager for Hyprlock
+# image of the current playing media
+
+include xml_escape.sh
+include pct_encode.sh
+
+function media_metadata_get {
+  local what="${1}"
+  local METAINFO="none"
+  case "${what}" in
+  'title' | 'artist' | 'album' | 'playerName')
+    read -r METAINFO < <(playerctl -f "{{trunc(${what}, 24)}}" metadata)
+    ;;
+  'duration'*)
+    read -r METAINFO < <(playerctl -f "{{mpris:length}}" metadata)
+    METAINFO="$((METAINFO / 1000000))" # Now it's in seconds
+
+    if [[ ! "${what}" == *"sec" ]]; then
+      local MINS="$((METAINFO / 60))"
+      local SECS="$((METAINFO % 60))"
+      printf -v METAINFO '%d:%02d' "${MINS}" "${SECS}"
+    fi
+    ;;
+  'elapsed'*)
+    read -r METAINFO < <(playerctl position)
+    METAINFO="${METAINFO%%.*}" # Now it's only seconds
+    if [[ ! "${what}" == *"sec" ]]; then
+      local MINS="$((METAINFO / 60))"
+      local SECS="$((METAINFO % 60))"
+      read -r METAINFO < <(printf '%d:%02d' "${MINS}" "${SECS}")
+    fi
+    ;;
+  'progress'*)
+    read -r METAINFO < <(playerctl -f "{{mpris:length}}" metadata)
+    TOTAL="$((METAINFO / 1000000))" # Now it's in seconds
+    read -r METAINFO < <(playerctl position)
+    ELAPSED="$(((${METAINFO%%.*} * 100) / TOTAL))"
+
+    if [[ "${what}" == *"bar" ]]; then
+      ELAPSED="$((ELAPSED / 3))"
+      local ELAPSEDR="$((33 - ELAPSED))"
+      IFS=$'\n' read -r METAINFO < <(
+        printf "%${ELAPSED}s" |
+          tr ' ' '-' |
+          printf -- "$(</dev/stdin)%${ELAPSEDR}s"
+      )
+    else
+      METAINFO="${ELAPSED}"
+    fi
+    ;;
+  'status'*)
+    read -r METAINFO < <(playerctl status)
+    if [[ "${what}" == *"icon" ]]; then
+      # Icon is the action to be made, not the status, except stop
+      METAINFO="${states[${METAINFO,,}]}"
+    else
+      METAINFO="${METAINFO,,}"
+    fi
+    ;;
+  *)
+    return 1
+    ;;
+  esac
+
+  if ${MARKUP_ESCAPE}; then
+    read -r METAINFO < <(xml_escape <<<"${METAINFO}")
+  elif ${URI_ESCAPE}; then
+    read -r METAINFO < <(pct_encode <<<"${METAINFO}")
+  fi
+
+  printf '%s' "${METAINFO}"
+}
+
+log() {
+  printf '[media-widget::%s] %s\n' "${1}" "${*:2}" >&2
+}
+
+function media_widget_back {
+  local csrc_str='^# source = ~/\.config/hypr/conf\.d/medialock\.conf$'
+  local usrc_str='^source = ~/\.config/hypr/conf\.d/medialock\.conf$'
+  local last=""
+  local medI=""
+  local USER_ID
+
+  USER_ID="$(id -u)" || {
+    log ERROR "Failed to get user ID"
+    return 1
+  }
+
+  log INFO "Starting media widget background service (UID: ${USER_ID})"
+
+  # Validate required files/commands
+  if [[ ! -f "${TOGGLE_FILE}" ]]; then
+    log ERROR "TOGGLE_FILE not found: ${TOGGLE_FILE}"
+    return 1
+  fi
+
+  if ! command -v playerctl &>/dev/null; then
+    log ERROR "playerctl not found in PATH"
+    return 1
+  fi
+
+  if grep -qP "${usrc_str}" "${TOGGLE_FILE}"; then
+    sed -i '/^#__medialock__/{n; s/^\([^#]\)/# \1/; }' "${TOGGLE_FILE}" || {
+      log ERROR "Failed to comment media lock source"
+    }
+  fi
+
+  log INFO "Monitoring media sessions..."
+  while true; do
+    local media_session_status
+
+    # Capture playerctl status with error handling
+    if ! media_session_status="$(playerctl status &>/dev/null)"; then
+      sleep 1
+      continue
+    fi
+
+    # Handle media lock config toggling
+    if [[ "${media_session_status}" != "Stopped" ]] &&
+      [[ -n "${media_session_status}" ]] &&
+      grep -qP "${csrc_str}" "${TOGGLE_FILE}"; then
+      log INFO "Media active, enabling media lock widget"
+      sed -i '/^#__medialock__/{n; s/^# //; }' "${TOGGLE_FILE}" || {
+        log ERROR "Failed to uncomment media lock source"
+      }
+
+    elif [[ -z "${media_session_status}" || "${media_session_status}" == "Stopped" ]] &&
+      grep -qP "${usrc_str}" "${TOGGLE_FILE}"; then
+      log INFO "Media stopped, disabling media lock widget"
+      sed -i '/^#__medialock__/{n; s/^\([^#]\)/# \1/; }' "${TOGGLE_FILE}" || {
+        log ERROR "Failed to comment media lock source"
+      }
+    fi
+
+    [[ "${media_session_status}" == "Stopped" ]] && sleep 1 && continue
+
+    # Handle album art updates
+    if medI="$(playerctl metadata mpris:artUrl 2>/dev/null)"; then
+      if [[ "${last}" != "${medI}" ]]; then
+        log INFO "Album art changed: ${medI}"
+        last="${medI}"
+
+        local art_path="${medI:7}" # Strip 'file://' prefix
+
+        if [[ ! -f "${art_path}" ]]; then
+          log WARN "Album art file not found: ${art_path}"
+          sleep 0.5
+          continue
+        fi
+
+        if command -v magick &>/dev/null; then
+          local w h
+          {
+            read -r w
+            read -r h
+          } < <(magick identify -format "%w\n%h" "${art_path}" 2>/dev/null)
+
+          if [[ -z "${w}" || -z "${h}" ]]; then
+            log ERROR "Failed to identify image dimensions: ${art_path}"
+            sleep 0.5
+            continue
+          fi
+
+          # Crop to square if aspect ratio is not 1:1
+          if [[ "${w}" != "${h}" ]]; then
+            log DEBUG "Cropping non-square image (${w}x${h}) to square"
+            if ! magick "${art_path}" -gravity center -crop "%[fx:h]x%[fx:h]+0+0" +repage "${MEDIA_ART_CACHE_LOC}" 2>/dev/null; then
+              log ERROR "Failed to crop image"
+              sleep 0.5
+              continue
+            fi
+          else
+            cp "${art_path}" "${MEDIA_ART_CACHE_LOC}" || {
+              log ERROR "Failed to copy square image"
+              sleep 0.5
+              continue
+            }
+          fi
+        else
+          log DEBUG "ImageMagick not found, copying art as-is"
+          cp "${art_path}" "${MEDIA_ART_CACHE_LOC}" || {
+            log ERROR "Failed to copy album art"
+            sleep 0.5
+            continue
+          }
+        fi
+
+        # Reload hyprlock if running
+        if pgrep -U "${USER_ID}" -x 'hyprlock' &>/dev/null; then
+          pkill -U "${USER_ID}" -SIGUSR2 hyprlock
+          log DEBUG "Sent SIGUSR2 to hyprlock (art updated)"
+        fi
+      fi
+    fi
+
+    sleep 0.5
+  done
+}
+
+function main {
+  trap 'kill 0' SIGTERM SIGINT
+  local OUT_FMT=""
+
+  # Icon is the action to be made, not the status, except stop
+  declare -A states=(
+    ['playing']=""
+    ['paused']=""
+    ['stopped']=""
+  )
+
+  readonly MEDIA_ART_CACHE_LOC=~/.cache/hyprland/medialock_cover_art.png
+  readonly TOGGLE_FILE=~/.cache/hyprland/medialock.conf
+  MARKUP_ESCAPE=false
+  URI_ESCAPE=false
+
+  case "${1}" in
+  backend)
+    media_widget_back
+    return
+    ;;
+  waybar)
+    OUT_FMT='{"text": "{title} ~ {artist}", "tooltip": "Player: {playerName} => {title}", "alt": "{statusicon} {elapsed} - {duration}", "class": "{status}"}'
+    MARKUP_ESCAPE=true
+    URI_ESCAPE=false
+    ;;
+  metadata)
+    shift 1
+    ((${#} == 0)) && {
+      printf 'Error: metadata subcommand requires additional arguments\n'
+      return 1
+    }
+
+    while ((${#} > 0)); do
+      case "${1}" in
+      -m | --markup)
+        MARKUP_ESCAPE=true
+        URI_ESCAPE=false
+        shift 1
+        ;;
+      -u | --uri)
+        URI_ESCAPE=true
+        MARKUP_ESCAPE=false
+        shift 1
+        ;;
+      *) break ;;
+      esac
+    done
+
+    OUT_FMT="${*}"
+    ;;
+  *)
+    printf 'usage: medialock <subcommand> ...[args]\n'
+    printf 'subcommands: backend, metadata, waybar\n'
+    return 1
+    ;;
+  esac
+
+  local format_it='\{([a-zA-Z_]+)\}'
+  while [[ "${OUT_FMT}" =~ ${format_it} ]]; do
+    IFS=$'\n' read -r res < <(media_metadata_get "${BASH_REMATCH[1]}")
+    OUT_FMT="${OUT_FMT//"${BASH_REMATCH[0]}"/"${res}"}"
+  done
+
+  printf '%b' "${OUT_FMT}"
+  return
+}
+
+main "${@}"

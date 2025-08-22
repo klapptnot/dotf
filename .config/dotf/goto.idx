@@ -1,0 +1,10 @@
+SHARED    &!SHARED_DRIVE;
+.c        &!HOME;/.config
+.c.       &*.c;/&%1;
+.l        &!HOME;/.local
+.l.       &*.l;/&%1;
+.s        &*.l;/share
+.s.       &*.s;/&%1;
+l3mon     &*SHARED;/Music/l3mon
+od        &*SHARED;/Documents/Obsidian
+df        &!HOME;/repos/dotf

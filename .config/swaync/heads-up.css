@@ -1,0 +1,82 @@
+/* Floating notifications styling */
+.floating-notifications.background .notification-row .notification-background {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 0 0 1px var(--surface1);
+  border-radius: 10px;
+  margin: 12px;
+  background-color: var(--base);
+  color: var(--text);
+  padding: 0;
+}
+
+.floating-notifications.background .notification-row .notification-background .notification .notification-content box overlay .image {
+  -gtk-icon-size: var(--notification-icon-size);
+  margin-right: 0.8rem;
+}
+.floating-notifications.background .notification-row .notification-background .notification .notification-content .app-icon {
+  margin: 0px 0.8rem 0px 0px;
+}
+
+.floating-notifications.background .notification-row .notification-background .notification.critical {
+  box-shadow: inset 0 0 8px 0 var(--red);
+}
+
+.floating-notifications.background .notification-row .notification-background .notification .notification-content {
+  margin: 8px;
+}
+
+.floating-notifications.background .notification-row .notification-background .notification .notification-content .summary {
+  color: var(--text);
+  font-weight: bold;
+}
+
+.floating-notifications.background .notification-row .notification-background .notification .notification-content .time {
+  color: var(--subtext0);
+  font-size: 0.9em;
+}
+
+.floating-notifications.background .notification-row .notification-background .notification .notification-content .body {
+  color: var(--text);
+  margin-top: 4px;
+}
+
+.floating-notifications.background .notification-row .notification-background .notification > .notification-alt-actions > .notification-action {
+  margin: 3px;
+}
+.floating-notifications.background .notification-row .notification-background .notification > .notification-alt-actions > .notification-action {
+  min-height: 3.8em;
+}
+
+.floating-notifications.background .notification-row .notification-background .notification > .notification-alt-actions > .notification-action > button {
+  border-radius: 10px;
+  color: var(--text);
+  background-color: var(--surface0);
+  box-shadow: none;
+  margin: 6px;
+  padding: 8px 16px;
+}
+
+.floating-notifications.background .notification-row .notification-background .notification > .notification-alt-actions > .notification-action > button:hover {
+  background-color: var(--surface1);
+  color: var(--text);
+}
+
+.floating-notifications.background .notification-row .notification-background .notification > .notification-alt-actions > .notification-action > button:active {
+  background-color: var(--mauve);
+  color: var(--base);
+}
+
+.floating-notifications.background .notification-row .notification-background .close-button {
+  margin: 8px;
+  padding: 2px;
+  border-radius: 50%;
+  color: var(--base);
+  background-color: var(--red);
+}
+
+.floating-notifications.background .notification-row .notification-background .close-button:hover {
+  background-color: var(--maroon);
+}
+
+.floating-notifications.background .notification-row .notification-background .close-button:active {
+  background-color: var(--red);
+}

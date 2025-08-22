@@ -1,0 +1,204 @@
+:root {
+  --roundness: 8px;
+}
+
+/* Color palette */
+@import "./colors.css";
+
+* {
+  all: unset;
+  font-size: 14px;
+  font-family: "Plus Jakarta Sans", "Ubuntu Nerd Font", sans-serif;
+}
+
+/* Window styling */
+window {
+  background-color: var(--base);
+  border-radius: 34px;
+  border: 2px solid var(--accent);
+}
+
+window decoration {
+  background-color: var(--base);
+  border-radius: 10px 10px 0 0;
+}
+
+/* Entry widgets (text inputs) */
+#search-box {
+  border-radius: 8px 8px 26px 26px;
+}
+
+#search-input {
+  background-color: var(--surface0);
+  color: var(--text);
+  border: 2px solid var(--accent);
+  border-radius: 22px 5px 5px 5px;
+  padding: 8px;
+  font-size: 10px;
+  transition: all 200ms ease;
+}
+
+#search-input:focus {
+  border-color: 2px solid var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  background-color: var(--surface1);
+}
+
+#search-input:disabled {
+  background-color: var(--mantle);
+  color: var(--overlay0);
+  border: 2px solid var(--surface0);
+}
+
+/* Button styling */
+#toggle-button {
+  background-color: var(--surface0);
+  color: var(--text);
+  border: 2px solid var(--accent);
+  border-radius: 5px 22px 5px 5px;
+  padding: 16px;
+  font-size: 12px;
+  transition: all 200ms ease;
+}
+
+#toggle-button:hover {
+  background-color: var(--surface1);
+  border-color: var(--surface2);
+  color: var(--lavender);
+}
+
+#toggle-button:active {
+  background-color: var(--surface2);
+}
+
+#toggle-button:disabled {
+  background-color: var(--mantle);
+  color: var(--overlay0);
+  border-color: var(--surface0);
+}
+
+#picker-scroll {
+  border-radius: 8px 8px 26px 26px;
+}
+
+/* ListBox styling */
+#picker-list {
+  background-color: transparent;
+  border-radius: 8px 8px 26px 26px;
+}
+
+#app-row {
+  background-color: transparent;
+  color: var(--text);
+  border-radius: calc(var(--roundness) + 6px);
+  transition: all 150ms ease;
+  padding: 6px 0px;
+  min-height: 32px;
+}
+
+#app-row:hover {
+  background-color: var(--surface0);
+  color: var(--lavender);
+}
+
+#app-row:selected {
+  background-color: var(--accent);
+}
+
+#app-row image {
+  border-radius: var(--roundness);
+  margin-right: 8px;
+}
+
+#app-row:selected label {
+  color: var(--crust);
+  font-weight: 500;
+}
+
+#app-row:selected:hover {
+  background-color: var(--ground);
+}
+
+#app-row label {
+  color: var(--text);
+}
+
+#app-row label:disabled {
+  color: var(--overlay0);
+}
+
+/* Scrollbar styling */
+scrollbar {
+  background-color: var(--mantle);
+  border-radius: var(--roundness);
+  border: none;
+}
+
+scrollbar slider {
+  background-color: var(--accent);
+  border-radius: var(--roundness);
+  border: 2px solid transparent;
+  min-width: 12px;
+  min-height: 12px;
+}
+
+scrollbar slider:hover {
+  background-color: var(--surface2);
+}
+
+scrollbar slider:active {
+  background-color: var(--overlay0);
+}
+
+scrollbar.vertical slider {
+  min-width: 12px;
+  min-height: 12px;
+}
+
+/* Error dialog */
+
+#error-reason {
+  color: var(--accent);
+}
+#error-label-stderr {
+  font-size: 16px;
+  color: var(--red);
+}
+#error-label-stdout {
+  font-size: 16px;
+  color: var(--green);
+}
+
+#error-stdout-scroll textview,
+#error-stderr-scroll textview {
+  background-color: var(--mantle);
+  color: var(--overlay0);
+  border-radius: var(--roundness);
+  padding: 8px;
+}
+
+#error-stdout-scroll textview selection,
+#error-stderr-scroll textview selection {
+  background-color: var(--accent);
+  color: var(--crust);
+}
+
+.error-copy-btn {
+  background-color: var(--peach);
+  color: var(--mantle);
+  border-radius: var(--roundness);
+  padding: 12px;
+}
+.error-copy-btn:hover {
+  background-color: var(--yellow);
+}
+
+#error-close-btn {
+  background-color: var(--red);
+  color: var(--mantle);
+  border-radius: var(--roundness);
+  padding: 12px;
+}
+#error-close-btn:hover {
+  background-color: var(--pink);
+}
