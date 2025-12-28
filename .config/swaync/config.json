@@ -52,18 +52,18 @@
           "update-command": "bash ~/.config/swaync/qs.sh query bluetooth"
         },
         {
-          "label": "󱩌 Dim",
-          "type": "toggle",
-          "active": false,
-          "command": "bash ~/.config/swaync/qs.sh toggle nightlight",
-          "update-command": "bash ~/.config/swaync/qs.sh query nightlight"
-        },
-        {
           "label": "󰀝 Airplane",
           "type": "toggle",
           "active": false,
           "command": "bash ~/.config/swaync/qs.sh toggle airplane",
           "update-command": "bash ~/.config/swaync/qs.sh query airplane"
+        },
+        {
+          "label": "󱩌 Dim",
+          "type": "toggle",
+          "active": false,
+          "command": "bash ~/.config/swaync/qs.sh toggle nightlight",
+          "update-command": "bash ~/.config/swaync/qs.sh query nightlight"
         },
         {
           "label": "󰖂 VPN",
@@ -73,7 +73,7 @@
           "update-command": "bash ~/.config/swaync/qs.sh query vpn"
         },
         {
-          "label": "󰖔 Dark Mode",
+          "label": "󰖔 Theme",
           "type": "toggle",
           "active": false,
           "command": "bash ~/.config/swaync/qs.sh toggle darkmode",

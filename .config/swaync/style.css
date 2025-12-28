@@ -381,27 +381,21 @@ slider {
   padding: 12px;
   margin: 2px;
   box-shadow: 0 2px 6px var(--crust);
-  border: 2px solid var(--altern);
+  border: 2px solid var(--subtext1);
   min-height: 24px;
   min-width: calc(48px * var(--homogeneous-or-zero));
 }
-.widget-buttons-grid > flowbox > flowboxchild > button > label {
-  font-family: "Ubuntu Nerd Font", sans-serif;
-}
-
-.widget-buttons-grid > flowbox > flowboxchild > button:hover {
-  background-color: var(--surface1);
-}
-
-.widget-buttons-grid > flowbox > flowboxchild > button:checked {
-  border: 2px solid var(--accent);
-}
-
 .widget-buttons-grid > flowbox > flowboxchild > button label {
+  font-family: "Ubuntu Nerd Font", sans-serif;
   font-size: 1.4rem;
   color: var(--text);
 }
-
+.widget-buttons-grid > flowbox > flowboxchild > button:hover {
+  background-color: var(--surface1);
+}
+.widget-buttons-grid > flowbox > flowboxchild > button:checked {
+  border: 2px solid var(--accent);
+}
 .widget-buttons-grid > flowbox > flowboxchild > button:checked label {
   color: var(--accent);
 }

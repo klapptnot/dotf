@@ -5,7 +5,7 @@ shell_env:
   BUN_INSTALL: $ echo -n ~/.bun
   FZF_DEFAULT_COMMAND: >
     fd --type file --follow --hidden
-    --exclude '.{local,config,vscode,cargo,rustup,steam}/*'
+    --exclude '.{local,config,vscode,cargo,rustup,steam,bun}/*'
     --exclude '.{android,apklab,cache,erg,git,gk,gnupg,gradle,npm,pki,ssh,var,wine,zen,zoom}'
     --exclude 'node_modules'
 

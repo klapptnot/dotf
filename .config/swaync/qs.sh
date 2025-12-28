@@ -2,6 +2,12 @@
 
 # SwayNC Quick Settings Script
 # Usage: ~/.config/swaync/qs.sh [query|toggle] [name]
+#
+# overkill maybe but I don't want swaync to crash
+function run-detach-ish {
+  setsid --fork "${@}" &>/dev/null < /dev/null
+}
+
 
 function command_exists {
   command -v "${1}" > /dev/null 2>&1
@@ -28,11 +34,11 @@ function qs::darkmode::toggle {
   read -r mode < <(dconf read /org/gnome/desktop/interface/color-scheme)
 
   if [[ "${mode}" =~ "dark" ]]; then
-    dconf write /org/gnome/desktop/interface/color-scheme "'prefer-light'"
-    notify-send "Appearance" "Dark mode disabled" -i weather-clear
+    dconf write /org/gnome/desktop/interface/color-scheme "'prefer-light'" \
+      || notify-send "Appearance" "Dark mode could not be disabled" -i weather-clear-night
   else
-    dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"
-    notify-send "Appearance" "Dark mode enabled" -i weather-clear-night
+    dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'" \
+      || notify-send "Appearance" "Dark mode could not be enabled" -i weather-clear
   fi
 }
 
@@ -46,11 +52,11 @@ function qs::wifi::toggle {
   local status
   read -r status < <(nmcli radio wifi)
   if [[ "${status}" == "enabled" ]]; then
-    nmcli radio wifi off
-    notify-send "WiFi" "WiFi disabled" -i network-wireless-offline
+    nmcli radio wifi off \
+      || notify-send "WiFi" "WiFi could not be disabled" -i network-wireless-signal-excellent
   else
-    nmcli radio wifi on
-    notify-send "WiFi" "WiFi enabled" -i network-wireless-signal-excellent
+    nmcli radio wifi on \
+      || notify-send "WiFi" "WiFi could not be enabled" -i network-wireless-offline
   fi
 }
 
@@ -69,12 +75,13 @@ function qs::bluetooth::toggle {
     local status
     read -r _ status < <(bluetoothctl show | grep "Powered:")
     if [[ "${status}" == "yes" ]]; then
-      bluetoothctl power off && {
-        command_exists blueman-applet && pgrep blueman-applet &> /dev/null && {
-          pkill --signal SIGINT blueman-applet
-        }
+      if ! bluetoothctl power off; then
+        notify-send "Bluetooth" "Bluetooth could not be powered off" -i bluetooth-active
+        return
+      fi
+      command_exists blueman-applet && pgrep blueman-applet &> /dev/null && {
+        pkill --signal SIGINT blueman-applet
       }
-      notify-send "Bluetooth" "Bluetooth disabled" -i bluetooth-disabled
     else
       if rfkill -no SOFT list bluetooth | grep -q blocked; then
         rfkill unblock bluetooth || {
@@ -84,7 +91,6 @@ function qs::bluetooth::toggle {
       fi
       # shellcheck disable=SC2015
       if ! bluetoothctl power on; then
-        notify-send "Bluetooth" "Bluetooth enabled" -i bluetooth-active
         command_exists blueman-applet && blueman-applet &> /dev/null &
       else
         notify-send "Bluetooth" "Failed to enable Bluetooth" -i dialog-error
@@ -108,10 +114,8 @@ function qs::dnd::toggle {
     local current
     read -r current < <(swaync-client -D)
     if [[ "${current}" == "true" ]]; then
-      notify-send "Do Not Disturb" "Do Not Disturb disabled" -i notification-new
       swaync-client -df -sw
     else
-      notify-send "Do Not Disturb" "Do Not Disturb enabled" -i notification-disabled
       swaync-client -dn -sw
     fi
   else
@@ -152,15 +156,14 @@ function qs::nightlight::toggle {
   local -a ca_command=()
   __get_nightlight_tool 4500 ca_command
 
-  local current
-  read -r current < <(qs::nightlight::query)
-
-  if [[ "${current}" == "true" ]]; then
-    pkill -x "${ca_command[0]}"
-    notify-send "Night Light" "Night Light disabled" -i weather-clear
+  if pgrep -x "${ca_command[0]}" > /dev/null; then
+    pkill -x "${ca_command[0]}" \
+      || notify-send "Night Light" "Night Light could not be disabled" -i weather-clear-night
   else
-    "${ca_command[@]}" &
-    notify-send "Night Light" "Night Light enabled" -i weather-clear-night
+    run-detach-ish "${ca_command[@]}"
+    sleep 1
+    pgrep -- "${ca_command[0]}" &> /dev/null \
+      || notify-send "Night Light" "Could not enable night light" -i weather-clear
   fi
 }
 
@@ -179,13 +182,19 @@ function qs::airplane::toggle {
   local current
   read -r current < <(qs::airplane::query)
   if [[ "${current}" == "true" ]]; then
-    nmcli radio wifi on
-    bluetoothctl power on 2> /dev/null
-    notify-send "Airplane Mode" "Airplane Mode disabled" -i airplane-mode-off
+    if ! nmcli radio wifi on; then
+      notify-send "Airplane Mode" "Wi-Fi is still off" -i airplane-mode
+      return
+    fi
+    bluetoothctl power on 2> /dev/null \
+      || notify-send "Airplane Mode" "Bluetooth is still off" -i airplane-mode
   else
-    nmcli radio wifi off
-    bluetoothctl power off 2> /dev/null
-    notify-send "Airplane Mode" "Airplane Mode enabled" -i airplane-mode
+    if ! nmcli radio wifi off; then
+      notify-send "Airplane Mode" "Wi-Fi is still on" -i airplane-mode-off
+      return
+    fi
+    bluetoothctl power off 2> /dev/null \
+      || notify-send "Airplane Mode" "Bluetooth is still on" -i airplane-mode-off
   fi
 }
 
@@ -243,11 +252,11 @@ function qs::hotspot::toggle {
   local current
   read -r current < <(qs::hotspot::query)
   if [[ "${current}" == "true" ]]; then
-    nmcli con down Hotspot 2> /dev/null
-    notify-send "Hotspot" "Hotspot disabled" -i network-wireless-hotspot-off
+    nmcli con down Hotspot 2> /dev/null \
+      || notify-send "Hotspot" "Hotspot could not be disabled" -i network-wireless-hotspot
   else
-    nmcli dev wifi hotspot
-    notify-send "Hotspot" "Hotspot enabled" -i network-wireless-hotspot
+    nmcli dev wifi hotspot \
+      || notify-send "Hotspot" "Hotspot could not be enabled" -i network-wireless-hotspot-off
   fi
 }
 
