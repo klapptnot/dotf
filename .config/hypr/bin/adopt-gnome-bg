@@ -49,25 +49,12 @@ function main {
     fi
 
     if [ "${gnome_bg}" != "${curr_back}" ]; then
-      # Preload new wallpaper first
-      if ! hyprctl-wrapper hyprpaper preload "${gnome_bg}"; then
-        printf "Failed to preload wallpaper\n" >&2
-        sleep 2
-        continue
-      fi
-
-      # Set it for all monitors
       for monitor in "${monitors[@]}"; do
         if ! hyprctl-wrapper hyprpaper wallpaper "${monitor}, ${gnome_bg}"; then
           printf "Failed to set wallpaper for monitor: %s\n" "${monitor}" >&2
           continue
         fi
       done
-
-      # Unload old wallpaper if it was loaded before
-      if [ "${curr_back}" != "<none>" ]; then
-        hyprctl-wrapper hyprpaper unload "${curr_back}" || true
-      fi
 
       curr_back="${gnome_bg}"
     fi

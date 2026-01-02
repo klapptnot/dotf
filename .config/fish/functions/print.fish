@@ -2,6 +2,7 @@
 # 🔗 https://github.com/klapptnot/dotf
 
 function print -d 'Rust style print with color formatting ability'
+  if test (count $argv) -eq 0; return; end
   set -f __format_str__ $argv[1]
   set -f args $argv[2..-1]
   # Replace all reset escape

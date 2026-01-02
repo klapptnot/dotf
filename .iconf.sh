@@ -91,7 +91,6 @@ pacman_pkgs=(
   python-pip
   python-pipx
   ripgrep
-  rofi
   slurp
   swaync
   thunar

@@ -352,11 +352,6 @@
       "wireplumber"
     ]
   },
-  "custom/launcher": {
-    "format": " ",
-    "on-click": "bash ~/.config/hypr/bin/rofim runner",
-    "on-click-right": "killall rofi"
-  },
   "custom/updates": {
     "format": "{}",
     "return-type": "json",

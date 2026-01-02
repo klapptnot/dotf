@@ -20,7 +20,7 @@
 # p -> bypasses the app's requests to inhibit keybinds.
 
 function show_window {
-  local CONFIG_FILE=~/.config/hypr/extra/keybinds.conf
+  local CONFIG_FILE=~/.config/hypr/misc/keybinds.conf
   local title="Hyprland 󰧹 "
   local bind_flags="[lrcgoenmtisdp]{0,10}"
   local bind_regex="^[^#\ ]*bind${bind_flags}\ =\ *(\\\$?[A-Za-z0-9_\ ]*?)\ *,\ *([A-Za-z0-9:_]+)\ *,\ *([a-zA-Z0-9_-]+)(\ *,\ *(.*?))?\ +#\ *(.*)$"

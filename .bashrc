@@ -73,10 +73,10 @@ yq.sh SHELL_ENV_CFG ~/.config/dotf/props.yaml
 unset -f yq.sh
 
 for key in ${!SHELL_ENV_CFG[@]}; do
-  [[ ${key} == .shell_env.* ]] || continue
+  [[ ${key} == .shell_environment.* ]] || continue
 
   value="${SHELL_ENV_CFG[${key}]}"
-  key="${key#.shell_env.}"
+  key="${key#.shell_environment.}"
 
   if [[ "${value}" == '$ '* ]]; then
     export "${key}=$(eval "${value:2}")"

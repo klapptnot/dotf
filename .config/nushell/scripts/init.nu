@@ -13,7 +13,7 @@
 #   }
 # }
 
-for kv in (open ~/.config/dotf/props.yaml | get shell_env | transpose key val) {
+for kv in (open ~/.config/dotf/props.yaml | get shell_environment | transpose key val) {
   if ($kv.val | str starts-with '$ ') {
     load-env { $kv.key: (bash -c ($kv.val | str substring 2..)) }
   } else {

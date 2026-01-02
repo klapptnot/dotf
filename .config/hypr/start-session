@@ -7,5 +7,5 @@ unset SESSION_ID
 
 [ -f ~/.config/hypr/setup-env ] && source ~/.config/hypr/setup-env
 
-exec systemd-run --user --pty --wait --unit=hyprwm --slice=session-graphical.slice Hyprland
+exec systemd-run --user --pty --wait --unit=hyprwm --slice=session-graphical.slice start-hyprland
 

@@ -1,16 +1,14 @@
-#!/usr/bin/env bash
+#!/usr/bin/bash
 
-# @A expands to either "name=val" or empty
-# check if set, even if set empty value
-[[ -z "${HYPRLAND_ENV_LOADED@A}" ]] && {
-  export HYPRLAND_ENV_LOADED=1
+if [[ ! -v HYPRLAND_ENV_LOADED ]]; then
+  : "${HOME:?no home 😭}"
 
   # XDG Base Directory Specification
   export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME}/.config}"
   export XDG_CACHE_HOME="${XDG_CACHE_HOME:-${HOME}/.cache}"
   export XDG_DATA_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}"
   export XDG_STATE_HOME="${XDG_STATE_HOME:-${HOME}/.local/state}"
-  export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/${USER_ID:-${UID}}}"
+  export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/${UID:?bro... 🥀}}"
 
   # XDG system directories
   export XDG_DATA_DIRS="${XDG_DATA_DIRS:-${HOME}/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share}"
@@ -53,60 +51,64 @@
 
   # export GTK_THEME="catppuccin-mocha-mauve-standard+default"
 
-  mkdir -p "${XDG_CONFIG_HOME}" "${XDG_CACHE_HOME}" "${XDG_DATA_HOME}" "${XDG_STATE_HOME}"
+  mkdir -p "${XDG_CONFIG_HOME}" "${XDG_CACHE_HOME}" "${XDG_DATA_HOME}" "${XDG_STATE_HOME}" || exec false
 
-  [ -f ~/.config/user-dirs.dirs ] && source ~/.config/user-dirs.dirs
+  [[ -f ~/.config/user-dirs.dirs ]] && source ~/.config/user-dirs.dirs
 
   # Dynamically collect all XDG_* variables
-  mapfile -t _XDG_ENV < <(compgen -v XDG_)
-  declare -x "${_XDG_ENV[@]}"
+  compgen -V _xdg_variables -v XDG_
+  declare -x "${_xdg_variables[@]}"
 
   # Paths that are not meant to be everywhere
-  if [ -f ~/.config/.paths ]; then
+  if [[ -f ~/.config/.paths ]]; then
     while read -r line; do
       [[ "${line}" == "#"* || -z "${line}" ]] && continue
 
       if [[ "${line}" == '!'* ]]; then
-        read -r fp < <(realpath "${line:1}") || continue
+        read -r fp < <(realpath "${line:1}" 2> /dev/null) || continue
         export PATH="${fp}:${PATH}"
       else
-        read -r fp < <(realpath "${line}") || continue
+        read -r fp < <(realpath "${line}" 2> /dev/null) || continue
         export PATH="${PATH}:${fp}"
       fi
     done < ~/.config/.paths
     unset -v line fp
   fi
 
-  systemctl --user import-environment \
-    "${_XDG_ENV[@]}" \
-    WAYLAND_DISPLAY \
-    MOZ_ENABLE_WAYLAND \
-    QT_QPA_PLATFORM \
-    QT_WAYLAND_DISABLE_WINDOWDECORATION \
-    SDL_VIDEODRIVER \
-    _JAVA_AWT_WM_NONREPARENTING \
-    CLUTTER_BACKEND \
-    GDK_BACKEND \
-    XCURSOR_THEME \
-    XCURSOR_SIZE \
-    XMODIFIERS \
-    GLFW_IM_MODULE \
-    QT_IM_MODULE \
-    QT_QPA_PLATFORMTHEME \
-    QT_AUTO_SCREEN_SCALE_FACTOR \
-    ELECTRON_OZONE_PLATFORM_HINT \
-    BASH_ENV \
-    PATH
-
-  if [[ "${1:-}" == "-v" ]] && [[ "${1:-}" == "--verbose" ]]; then
+  if [[ "${1:-}" != "-s" ]] && [[ "${1:-}" != "--shell" ]]; then
+    systemctl --user import-environment \
+      "${_xdg_variables[@]}" \
+      WAYLAND_DISPLAY \
+      MOZ_ENABLE_WAYLAND \
+      QT_QPA_PLATFORM \
+      QT_WAYLAND_DISABLE_WINDOWDECORATION \
+      SDL_VIDEODRIVER \
+      _JAVA_AWT_WM_NONREPARENTING \
+      CLUTTER_BACKEND \
+      GDK_BACKEND \
+      XCURSOR_THEME \
+      XCURSOR_SIZE \
+      XMODIFIERS \
+      GLFW_IM_MODULE \
+      QT_IM_MODULE \
+      QT_QPA_PLATFORMTHEME \
+      QT_AUTO_SCREEN_SCALE_FACTOR \
+      ELECTRON_OZONE_PLATFORM_HINT \
+      BASH_ENV \
+      PATH
+  else
     echo "✓ Hyprland environment configured"
-    echo "=== XDG Variables (${#_XDG_ENV[@]} total) ==="
-    declare -p "${_XDG_ENV[@]}"
+    echo "=== XDG Variables (${#_xdg_variables[@]} total) ==="
+    declare -p "${_xdg_variables[@]}"
     echo ""
     echo "=== Custom Variables ==="
     echo "${XCURSOR_THEME@A}"
     echo "${XCURSOR_SIZE@A}"
     echo "${QT_QPA_PLATFORMTHEME@A}"
     echo "${ELECTRON_OZONE_PLATFORM_HINT@A}"
+    [[ -v SHELL ]] && exec "${SHELL}"
+    for x in /usr/bin/nu /usr/bin/bash /usr/bin/sh; do [[ -x "${x}" ]] && exec "${x}"; done
   fi
-}
+
+  export HYPRLAND_ENV_LOADED=1
+fi
