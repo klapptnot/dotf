@@ -3,6 +3,12 @@
 
 readonly SOCKET_TIMEOUT="${SOCKET_TIMEOUT:-5}"
 
+declare -rA THEME_KEY_IMAGE=(
+  ["'prefer-dark'"]="picture-uri-dark"
+  ["'prefer-light'"]="picture-uri"
+  ["'default'"]="picture-uri"
+)
+
 function main {
   for cmd in hyprpaper gsettings hyprctl jq; do
     if ! command -v "${cmd}" &> /dev/null; then
@@ -10,9 +16,6 @@ function main {
       return 1
     fi
   done
-
-  read -r theme_pref < <(gsettings get org.gnome.desktop.interface color-scheme)
-  [ "${theme_pref}" != "'default'" ] && theme_pref="picture-uri-dark" || theme_pref="picture-uri"
 
   if [ "${1}" == 'query' ]; then
     read -r gnome_bg < <(gsettings get org.gnome.desktop.background "${theme_pref}")
@@ -31,8 +34,10 @@ function main {
   mapfile -t monitors < <(hyprctl -j monitors all | jq -rM '.[] | .name')
 
   local curr_back="<none>"
+  local theme_pref
   while true; do
-    read -r gnome_bg < <(gsettings get org.gnome.desktop.background "${theme_pref}") || {
+    read -r theme_pref < <(dconf read /org/gnome/desktop/interface/color-scheme) || theme_pref="'default'"
+    read -r gnome_bg < <(gsettings get org.gnome.desktop.background "${THEME_KEY_IMAGE["${theme_pref}"]}") || {
       printf "Failed to read gsettings background\n" >&2
       sleep 2
       continue
