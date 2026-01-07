@@ -18,7 +18,7 @@ button {
   background-repeat: no-repeat;
   background-position: center;
   background-size: 20%;
-  border-radius: 8px;
+  border-radius: 48px;
   box-shadow: none;
   text-shadow: none;
   animation: gradient_f 20s ease-in infinite;
@@ -34,7 +34,6 @@ button:hover {
   background-size: 30%;
   animation: gradient_f 20s ease-in infinite;
   transition: all 0.3s cubic-bezier(.55, 0.0, .28, 1.682);
-  margin: 5px 50px 5px 50px;
 }
 
 #lock {

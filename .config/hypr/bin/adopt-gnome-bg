@@ -71,7 +71,7 @@ function main {
 function wait-for-socket {
   for ((i = 0; i <= SOCKET_TIMEOUT; i++)); do
     test -S "${XDG_RUNTIME_DIR}/hypr/${HYPRLAND_INSTANCE_SIGNATURE}/.hyprpaper.sock" && return 0
-    sleep 0.1
+    sleep 1
   done
   return 1
 }
