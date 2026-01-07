@@ -1,0 +1,29 @@
+@define-color accent #8839ef;
+@define-color accent-soft #9d63f2;
+@define-color accent-mute #7a2fe0;
+@define-color accent-deep #5b1fb8;
+
+@define-color ground #ea76cb;
+@define-color ground-soft #f29bdc;
+@define-color ground-mute #d65fb4;
+@define-color ground-deep #b54a97;
+
+@define-color layer0 #ccccff;
+@define-color layer1 #b3b3f2;
+@define-color layer2 #9999e6;
+@define-color layer3 #7f7fd9;
+
+@define-color text #2a2f3a;
+@define-color text-soft #3a3f4a;
+@define-color text-mute #4a4153;
+@define-color text-deep #8b90a3;
+
+@define-color ok #42a05b;
+@define-color ok-soft #a6e3a1;
+
+@define-color warn #9da805;
+@define-color warn-soft #f9e2af;
+
+@define-color err #df5f5f;
+@define-color err-soft #f38ba8;
+

@@ -6,7 +6,7 @@ source ~/.config/nushell/scripts/mirkop.nu    # Prompt functions
 source ~/.config/nushell/scripts/goto.nu      # Alias based `cd`
 source ~/.config/nushell/scripts/carapace.nu  # Completions helper
 
-alias vi = vim
+alias uwu~ = sudo
 alias nano = vim
 alias lg = lazygit
 alias git = git --no-pager

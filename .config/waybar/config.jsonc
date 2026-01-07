@@ -11,7 +11,6 @@
     "clock"
   ],
   "modules-right": [
-    "mpris",
     "tray",
     "group/network-grp",
     "backlight/slider",
@@ -222,8 +221,8 @@
   },
   "battery": {
     "states": {
-      "good": 95,
-      "warning": 30,
+      "good": 80,
+      "warning": 40,
       "critical": 20
     },
     "interval": 2,
@@ -258,12 +257,19 @@
       "weeks-pos": "right",
       "on-scroll": 1,
       "format": {
-        "months": "<span color='#ffead3'><b>{}</b></span>",
-        "days": "<span color='#ecc6d9'><b>{}</b></span>",
-        "weeks": "<span color='#99ffdd'><b>W{}</b></span>",
-        "weekdays": "<span color='#ffcc66'><b>{}</b></span>",
-        "today": "<span color='#ff6699'><b><u>{}</u></b></span>"
-      }
+        "months": "<span color='#4c4f69'><b>{}</b></span>",
+        "weekdays": "<span color='#5c5f77'><b>{}</b></span>",
+        "days": "<span color='#6c6f85'>{}</span>",
+        "weeks": "<span color='#9ca0b0'><small>W{}</small></span>",
+        "today": "<span color='#8839ef'><b><u>{}</u></b></span>"
+      },
+      // "format": {
+      //   "months": "<span color='#cdd6f4'><b>{}</b></span>",
+      //   "weekdays": "<span color='#bac2de'><b>{}</b></span>",
+      //   "days": "<span color='#a6adc8'>{}</span>",
+      //   "weeks": "<span color='#9399b2'><small>W{}</small></span>",
+      //   "today": "<span color='#cba6f7'><b><u>{}</u></b></span>"
+      // }
     },
     "actions": {
       "on-click-right": "mode",
@@ -376,7 +382,7 @@
     "smooth-scrolling-threshold": 1
   },
   "custom/notification": {
-    "tooltip": false,
+    "tooltip": true,
     "format": "{icon}",
     "format-icons": {
       "notification": "<span foreground='red'><sup></sup></span>",

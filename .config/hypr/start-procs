@@ -12,21 +12,16 @@ fi
 
 # do not start any unit if some units are running, print them
 systemctl --quiet --user is-active --all 'hypr-autostart-*' && {
-  systemctl --user list-unit-files 'hypr-autostart-*' --no-legend | awk '{print $1}'
+  systemctl --user list-units 'hypr-autostart-*' --no-legend | awk '{print $1 " " $4 " " $6}'
   exit 0
 }
-
-systemctl --user start \
-  --property=BindsTo=hyprwm.service \
-  --property=After=hyprwm.service \
-  vicinae.service
 
 gsettings set org.gnome.desktop.interface gtk-theme "catppuccin-mocha-mauve-standard+default"
 gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"
 gsettings set org.gnome.desktop.interface cursor-theme "hatsune-miku-cursor"
 gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark"
 
-function run_bg {
+function run_as_unit {
   {
     read -r rsm < <(rsum -l 8 -c 'a-z0-9')
     local unit_name="hypr-autostart-${rsm}"
@@ -51,24 +46,18 @@ function run_bg {
   } &
 }
 
-run_bg hyprpaper
-run_bg waybar
-run_bg fcitx5
-run_bg nm-applet
-run_bg swaync
-run_bg hypridle
-run_bg lbagtk #--daemon
+run_as_unit fcitx5
+run_as_unit nm-applet
+run_as_unit lbagtk
 
 # as gnome for right-click wallpaper
-run_bg @gnome thunar --daemon
-
-run_bg gnome-keyring-daemon --start --components=secrets
+run_as_unit @gnome thunar --daemon
 
 if [ -x /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 ]; then
-  run_bg /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
+  run_as_unit /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
 elif [ -f /usr/lib/polkit-kde-authentication-agent-1 ]; then
-  run_bg /usr/lib/polkit-kde-authentication-agent-1
+  run_as_unit /usr/lib/polkit-kde-authentication-agent-1
 fi
 
-run_bg ~/.config/hypr/bin/medialock backend
-run_bg ~/.config/hypr/bin/adopt-gnome-bg
+run_as_unit bash ~/.config/hypr/bin/medialock backend
+run_as_unit bash ~/.config/hypr/bin/adopt-gnome-bg

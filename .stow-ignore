@@ -2,6 +2,7 @@
 # Each line is a regex pattern applied to relative paths
 
 ^README\.md$
+^LICENSE$
 ^dotf$
 ^\.iconf\.sh$
 ^\.stow-ignore\.sh$
