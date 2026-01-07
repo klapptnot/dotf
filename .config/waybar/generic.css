@@ -1,0 +1,307 @@
+/* generic styles, require colors to be defined */
+
+* {
+  border: none;
+  font-family: "CaskaydiaCove Nerd Font";
+  font-feature-settings: '"zero", "ss01", "ss02", "ss03", "ss04", "ss05", "cv31"';
+  font-size: 13px;
+  min-height: 15px;
+  border-radius: 50px;
+  transition: all 0.3s ease-out;
+}
+
+window#waybar {
+  background: transparent;
+  padding: 0px;
+}
+
+tooltip {
+  padding: 0px;
+}
+
+tooltip > box {
+  color: @text;
+  background: @layer0;
+  border-radius: 6px;
+  border: 1px solid @text;
+  padding: 8px;
+}
+
+/* gap: 4px */
+.modules-left > *:not(:first-child) > *,
+.modules-center > *:not(:first-child) > *,
+.modules-right > *:not(:first-child) > * {
+  margin-left: 0px;
+}
+
+.modules-left,
+.modules-center,
+.modules-right {
+  background: @layer0;
+}
+
+#window,
+#backlight,
+#backlight-slider,
+#clock,
+#tray,
+#cava,
+#mpris,
+#workspaces,
+#custom-notification,
+#custom-updates,
+#custom-weather,
+#custom-launcher,
+#custom-playerctl,
+#custom-power,
+#custom-media {
+  color: @text;
+  padding: 4px;
+  border: 1px solid transparent;
+}
+
+#network-grp,
+#audio-grp,
+#motherboard,
+#battery-grp {
+  color: @text;
+  padding: 0px 4px;
+  border: 1px solid transparent;
+}
+
+#window:hover,
+#backlight:hover,
+#backlight-slider:hover,
+#clock:hover,
+#tray:hover,
+#cava:hover,
+#mpris:hover,
+#workspaces:hover,
+#custom-notification:hover,
+#custom-updates:hover,
+#custom-weather:hover,
+#custom-launcher:hover,
+#custom-playerctl:hover,
+#custom-power:hover,
+#custom-media:hover,
+#network-grp:hover,
+#audio-grp:hover,
+#motherboard:hover,
+#battery-grp:hover {
+  background: @layer2;
+  border: 1px solid @accent;
+}
+
+#window {
+  color: @text;
+}
+
+window.empty #window {
+  background: transparent;
+  color: transparent;
+  border: none;
+  padding: 0px;
+}
+
+#tray > widget > image {
+  background: transparent;
+  -gtk-icon-transform: scale(1);
+  -gtk-icon-shadow: 1px 1px rgba(0, 0, 0, 0);
+}
+
+#tray .background.popup menu {
+  background: @layer0;
+  border-radius: 13px;
+  padding: 2px;
+}
+
+#tray .background.popup menu separator {
+  background: @layer3;
+  min-height: 1px;
+  margin: 0px;
+}
+
+#tray .background.popup menu menuitem {
+  padding: 2px 4px;
+}
+
+#tray .background.popup menu menuitem:hover {
+  background: @layer2;
+  color: @accent;
+}
+
+#tray .background.popup menu menuitem label {
+  color: @text;
+  min-height: 20px;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+#tray .background.popup menu menuitem image {
+  min-width: 16px;
+  min-height: 16px;
+  padding: 0px 0px 0px 4px;
+  -gtk-icon-transform: scale(0.6);
+}
+
+#tray .background.popup menu radio {
+  margin: 0px 4px 0px 4px;
+  background: @layer1;
+}
+
+#tray .background.popup menu radio:checked {
+  background: @layer3;
+  color: @text;
+}
+
+#tray .background.popup menu radio:hover {
+  background: @accent-mute;
+  color: @accent-deep;
+}
+
+#workspaces {
+  padding: 0px;
+  font-weight: 500;
+}
+
+#workspaces button {
+  margin: 0px 0px;
+  color: @text;
+  padding: 0px 4px;
+  min-width: 28px;
+}
+
+#workspaces button:not(:first-child) {
+  margin-left: 2px;
+}
+
+/* #workspaces button:first-child { */
+/*   margin-left: 4px; */
+/* } */
+/* #workspaces button:last-child { */
+/*   margin-right: 4px; */
+/* } */
+
+#workspaces button.active {
+  color: @accent;
+  font-weight: 600;
+}
+
+#workspaces button.active:hover {
+  background: @layer2;
+}
+
+#workspaces button.focused {
+  background: @layer2;
+  color: @text;
+}
+
+#workspaces button.focused:hover {
+  background: @layer2;
+  color: @accent;
+}
+
+#workspaces button.urgent {
+  color: @warn-soft;
+  animation: urgent-pulse 1.5s ease-in-out infinite;
+  border: 1px solid @warn-soft;
+}
+
+#workspaces button:hover:not(.active) {
+  color: @text;
+  background: @layer2;
+}
+
+#backlight-slider {
+  min-width: 44px;
+  padding: 0px 12px;
+}
+
+#backlight-slider trough,
+#backlight-slider trough > *:not(slider) {
+  min-height: 8px;
+  border-radius: 8px;
+  background: @text-deep;
+}
+
+#backlight-slider trough slider,
+#backlight-slider trough highlight {
+  background: @accent;
+}
+
+/* centered font notification glyphs */
+#custom-notification {
+  font-size: 14px;
+}
+#custom-notification.none {
+  padding: 0px 12px 0px 8px;
+}
+#custom-notification.notification {
+  padding: 0px 9px 0px 8px;
+}
+#custom-notification.dnd-none {
+  padding: 0px 15px 0px 7px;
+}
+#custom-notification.dnd-notification {
+  padding: 0px 11px 0px 7px;
+}
+
+#custom-power {
+  font-size: 16px;
+  color: @err;
+  padding: 0px 4px 0px 8px;
+}
+
+#network-grp:hover > widget:not(:first-child) > *,
+#audio-grp:hover > widget:not(:first-child) > *,
+#battery-grp:hover > widget:not(:first-child) > *,
+#motherboard-grp:hover > widget:not(:first-child) > *
+{
+  font-size: 13px;
+  margin-left: 8px;
+  opacity: 1;
+}
+
+#network-grp > widget:not(:first-child) > *,
+#audio-grp > widget:not(:first-child) > *,
+#battery-grp > widget:not(:first-child) > *,
+#motherboard-grp > widget:not(:first-child) > *
+{
+  font-size: 0px;
+  opacity: 0;
+  transition: all 0.4s ease;
+}
+
+@keyframes urgent-pulse {
+  0% {
+    background: @layer0;
+    border: 1px solid @err-soft;
+  }
+  50% {
+    background: @err-soft;
+    border: 1px solid @err-soft;
+  }
+  100% {
+    background: @layer0;
+    border: 1px solid @err-soft;
+  }
+}
+
+#battery-grp > widget > #battery.good:not(.charging) {
+  color: @ok;
+}
+
+#battery-grp > widget > #battery.warning:not(.charging) {
+  color: @warn;
+}
+
+#battery-grp > widget > #battery.critical:not(.charging) {
+  padding-left: 6px;
+  padding-right: 6px;
+  animation-name: urgent-pulse;
+  animation-duration: 1s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+

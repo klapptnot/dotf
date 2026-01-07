@@ -44,7 +44,7 @@ function update_sources {
 }
 
 function install_packages {
-  if ${DOTF_INSTALL_NO_PKGS}; then
+  if ! ${DOTF_INSTALL_PKGS}; then
     log i "User rejected packages installation"
     return
   fi
@@ -349,7 +349,7 @@ function main {
   } "normal" => DOTF_INSTALL_MODE "Installation mode (normal, reset, update)"
 
   @setup g/geoinf :str => DOTF_INSTALL_USER_GEOINFO "User's city and country name"
-  @setup n/no-pkgs :flag => DOTF_INSTALL_NO_PKGS "Skip packages installation process"
+  @setup P/install-pkgs :flag => DOTF_INSTALL_PKGS "Install packages with pacman/yay"
   @setup R/reload :flag => DOTF_RELOAD_WM "Force WM to reload config"
 
   @bgmgr ! {

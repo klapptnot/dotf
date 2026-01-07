@@ -7,5 +7,15 @@ unset SESSION_ID
 
 [ -f ~/.config/hypr/setup-env ] && source ~/.config/hypr/setup-env
 
-exec systemd-run --user --pty --wait --unit=hyprwm --slice=session-graphical.slice start-hyprland
+exec systemd-run --user --pty --wait \
+  --unit=hyprwm \
+  --slice=session-graphical.slice \
+  --property=BindsTo=graphical-session.target \
+  --property=Wants=graphical-session-pre.target \
+  --property=After=graphical-session-pre.target \
+  --property=Before=graphical-session.target \
+  --property=Restart=on-failure \
+  --property=RestartSec=1 \
+  --collect \
+  start-hyprland
 
