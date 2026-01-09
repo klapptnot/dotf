@@ -414,7 +414,7 @@ $env.config = {
                 #      str join
                 #      str trim
                 #      str split
-                correct_cursor_pos: false
+                correct_cursor_pos: true
             }
             style: {
                 text: green
@@ -553,7 +553,7 @@ $env.config = {
             mode: [emacs, vi_normal, vi_insert]
             event: {
                 send: executehostcommand,
-                cmd: "clear"
+                cmd: clear
             }
         }
         {
@@ -564,13 +564,23 @@ $env.config = {
             event: { send: searchhistory }
         }
         {
-            name: open_nvim_fzf_file
+            name: open_file_nvim
             modifier: control
             keycode: char_o
             mode: [emacs, vi_normal, vi_insert]
             event: {
                 send: executehostcommand,
-                cmd: "__open_nvim_fzf_file"
+                cmd: __open_file_nvim
+            }
+        }
+        {
+            name: unfreeze_last_app
+            modifier: control
+            keycode: char_b
+            mode: emacs
+            event: {
+                send: executehostcommand
+                cmd: __unfreeze_last_app
             }
         }
         # {
@@ -780,18 +790,18 @@ $env.config = {
             mode: emacs
             event: { send: enter }
         }
-        {
-            name: move_left
-            modifier: control
-            keycode: char_b
-            mode: emacs
-            event: {
-                until: [
-                    { send: menuleft }
-                    { send: left }
-                ]
-            }
-        }
+        # {
+        #     name: move_left
+        #     modifier: control
+        #     keycode: char_b
+        #     mode: emacs
+        #     event: {
+        #         until: [
+        #             { send: menuleft }
+        #             { send: left }
+        #         ]
+        #     }
+        # }
         {
             name: move_right_or_take_history_hint
             modifier: control

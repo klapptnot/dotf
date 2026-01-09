@@ -13,7 +13,7 @@
 
 .battery-alert-window {
   background-color: var(--base);
-  border-radius: 16px;
+  border-radius: 8px;
   border: 2px solid var(--accent);
   box-shadow: 0 8px 32px alpha(var(--crust), 0.8);
 }

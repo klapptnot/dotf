@@ -1,4 +1,12 @@
-def __open_nvim_fzf_file [] {
+def __unfreeze_last_app [] {
+  let frozen  = job list | where type == frozen | last
+
+  if $frozen != null {
+    job unfreeze $frozen.id
+  }
+}
+
+def __open_file_nvim [] {
   let f = (
     fzf
     --prompt 'File: '
