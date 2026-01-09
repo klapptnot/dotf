@@ -347,6 +347,7 @@
     "orientation": "horizontal",
     "modules": [
       "battery",
+      "custom/theme-toggle",
       "idle_inhibitor"
     ]
   },
@@ -380,6 +381,15 @@
     "on-scroll-down": "playerctl previous",
     "scroll-step": 1,
     "smooth-scrolling-threshold": 1
+  },
+  "custom/theme-toggle": {
+    "exec": "bash ~/.config/waybar/scripts/theme-toggle.sh status",
+    "on-click": "bash ~/.config/waybar/scripts/theme-toggle.sh toggle",
+    "return-type": "json",
+    "interval": 30,
+    "signal": 8,
+    "format": "{}",
+    "tooltip": true
   },
   "custom/notification": {
     "tooltip": true,

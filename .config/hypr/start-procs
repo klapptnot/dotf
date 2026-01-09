@@ -4,22 +4,11 @@
 # because they are also transient, started with `systemd-run`
 systemctl --user reset-failed 'hypr-autostart-*' 2> /dev/null
 
-if [ "${1}" == 'stop' ]; then
+if [ "${1}" == '--stop' ]; then
   systemctl --quiet --user is-active --all 'hypr-autostart-*' \
     && systemctl --user stop 'hypr-autostart-*'
   exit "${?}"
 fi
-
-# do not start any unit if some units are running, print them
-systemctl --quiet --user is-active --all 'hypr-autostart-*' && {
-  systemctl --user list-units 'hypr-autostart-*' --no-legend | awk '{print $1 " " $4 " " $6}'
-  exit 0
-}
-
-gsettings set org.gnome.desktop.interface gtk-theme "catppuccin-mocha-mauve-standard+default"
-gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"
-gsettings set org.gnome.desktop.interface cursor-theme "hatsune-miku-cursor"
-gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark"
 
 function run_as_unit {
   {
@@ -45,6 +34,22 @@ function run_as_unit {
     systemd-run "${systemd_args[@]}" -- "${@}" &> /dev/null
   } &
 }
+
+if ((${#} > 0)); then
+  run_as_unit "${@}"
+  exit 0
+fi
+
+# do not start any unit if some units are running, print them
+systemctl --quiet --user is-active --all 'hypr-autostart-*' && {
+  systemctl --user list-units 'hypr-autostart-*' --no-legend | awk '{print $1 " " $4 " " $6}'
+  exit 0
+}
+
+gsettings set org.gnome.desktop.interface gtk-theme "catppuccin-mocha-mauve-standard+default"
+gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"
+gsettings set org.gnome.desktop.interface cursor-theme "hatsune-miku-cursor"
+gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark"
 
 run_as_unit fcitx5
 run_as_unit nm-applet

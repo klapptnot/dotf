@@ -18,7 +18,11 @@ function main {
   done
 
   if [ "${1}" == 'query' ]; then
-    read -r gnome_bg < <(gsettings get org.gnome.desktop.background "${theme_pref}")
+    read -r theme_pref < <(dconf read /org/gnome/desktop/interface/color-scheme) || theme_pref="'default'"
+    read -r gnome_bg < <(gsettings get org.gnome.desktop.background "${THEME_KEY_IMAGE["${theme_pref}"]}") || {
+      printf "Failed to read gsettings background\n" >&2
+      return 1
+    }
     # from 'file:///path/to/file' to /path/to/file
     printf '%s\n' "${gnome_bg:8:-1}"
     return
