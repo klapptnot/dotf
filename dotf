@@ -326,11 +326,11 @@ function main {
   barg::parse "${@}" << BARG
   #[always]
   meta {
-    extargs: 'DOTF_EXTRA_ARGS'
-    summary: 'Installer script'
-    epilogs: '_epilog_lines'
-    reqcmds: true
-    helpmsg: true
+    summary: 'Installation helper script'
+    spare_args_var: 'DOTF_EXTRA_ARGS'
+    epilog_lines: '_epilog_lines'
+    subcommand_required: true
+    help_enabled: true
   }
 
   commands {

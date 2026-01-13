@@ -1,15 +1,13 @@
 #!/usr/bin/bash
 # 🔗 https://github.com/klapptnot/dotf
 
-readonly SOCKET_TIMEOUT="${SOCKET_TIMEOUT:-5}"
-
 declare -rA THEME_KEY_IMAGE=(
-  ["'prefer-dark'"]="picture-uri-dark"
-  ["'prefer-light'"]="picture-uri"
-  ["'default'"]="picture-uri"
+  ["light"]="picture-uri"
+  ["dark"]="picture-uri-dark"
 )
 
 function main {
+  readonly SOCKET_TIMEOUT="${1:-0}"
   for cmd in hyprpaper gsettings hyprctl jq; do
     if ! command -v "${cmd}" &> /dev/null; then
       printf '%s is not an executable, or is not accessible\n' "${cmd}" >&2
@@ -17,14 +15,20 @@ function main {
     fi
   done
 
+  local bg_key value
+  read -r bg_key < <(dconf read /org/gnome/desktop/interface/color-scheme) || bg_key="'default'"
+  bg_key="${bg_key:8:-1}" # 'light' | 'dark' | ''
+  bg_key="${THEME_KEY_IMAGE[${bg_key:-light}]}"
+
+  if ! read -r value < <(gsettings get org.gnome.desktop.background "${bg_key}"); then
+    printf "Failed to read gsettings background\n" >&2
+    return 1
+  fi
+  # from 'file:///path/to/file' to /path/to/file
+  value="${value:8:-1}"
+
   if [ "${1}" == 'query' ]; then
-    read -r theme_pref < <(dconf read /org/gnome/desktop/interface/color-scheme) || theme_pref="'default'"
-    read -r gnome_bg < <(gsettings get org.gnome.desktop.background "${THEME_KEY_IMAGE["${theme_pref}"]}") || {
-      printf "Failed to read gsettings background\n" >&2
-      return 1
-    }
-    # from 'file:///path/to/file' to /path/to/file
-    printf '%s\n' "${gnome_bg:8:-1}"
+    printf '%s\n' "${value}"
     return
   fi
 
@@ -34,45 +38,49 @@ function main {
     return
   fi
 
-  # Get a list of all monitors available
   mapfile -t monitors < <(hyprctl -j monitors all | jq -rM '.[] | .name')
+  trap 'kill -15 0' EXIT SIGINT
 
-  local curr_back="<none>"
-  local theme_pref
-  while true; do
-    read -r theme_pref < <(dconf read /org/gnome/desktop/interface/color-scheme) || theme_pref="'default'"
-    read -r gnome_bg < <(gsettings get org.gnome.desktop.background "${THEME_KEY_IMAGE["${theme_pref}"]}") || {
-      printf "Failed to read gsettings background\n" >&2
-      sleep 2
-      continue
-    }
+  # set to a different value, then after starting the monitor
+  # it triggers immediately as we set the old value again
+  gsettings set org.gnome.desktop.background "${bg_key}" "${value}"
+  {
+    sleep 0.1
+    gsettings set org.gnome.desktop.background "${bg_key}" "file://${value}"
+  } &
+  disown "${!}"
 
-    # from 'file:///path/to/file' to /path/to/file
-    local gnome_bg="${gnome_bg:8:-1}"
+  {
+    gsettings monitor org.gnome.desktop.interface color-scheme &
+    gsettings monitor org.gnome.desktop.background
+  } \
+    | while IFS=': ' read -r key value; do
+      value="${value:8:-1}" # 'light' | 'dark' | '' | /path/to/file
+      if [[ "${key}" == "color-scheme" ]]; then
+        [ "${bg_key}" == "${THEME_KEY_IMAGE[${value:-light}]}" ] && continue
+        bg_key="${THEME_KEY_IMAGE[${value:-light}]}"
 
-    # Skip invalid backgrounds
-    if [[ ! -f "${gnome_bg}" ]]; then
-      printf "Background file doesn't exist: %s\n" "${gnome_bg}" >&2
-      sleep 2
-      continue
-    fi
-
-    if [ "${gnome_bg}" != "${curr_back}" ]; then
-      for monitor in "${monitors[@]}"; do
-        if ! hyprctl-wrapper hyprpaper wallpaper "${monitor}, ${gnome_bg}"; then
-          printf "Failed to set wallpaper for monitor: %s\n" "${monitor}" >&2
+        if ! read -r value < <(gsettings get org.gnome.desktop.background "${bg_key}"); then
+          printf "Failed to read gsettings background: %s\n" "${bg_key}" >&2
           continue
         fi
+
+        value="${value:8:-1}" # /path/to/file
+      else
+        [ "${key}" != "${bg_key}" ] && continue
+      fi
+
+      for monitor in "${monitors[@]}"; do
+        if ! hyprctl-wrapper hyprpaper wallpaper "${monitor}, ${value}"; then
+          printf "Failed to set wallpaper for monitor: %s\n" "${monitor}" >&2
+        fi
       done
-
-      curr_back="${gnome_bg}"
-    fi
-
-    sleep 1
-  done
+    done
 }
 
 function wait-for-socket {
+  test "${SOCKET_TIMEOUT}" == '0' && return 0
+
   for ((i = 0; i <= SOCKET_TIMEOUT; i++)); do
     test -S "${XDG_RUNTIME_DIR}/hypr/${HYPRLAND_INSTANCE_SIGNATURE}/.hyprpaper.sock" && return 0
     sleep 1

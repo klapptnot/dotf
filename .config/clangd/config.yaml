@@ -1,0 +1,54 @@
+CompileFlags:
+  Add:
+    - -std=c23
+    - -x
+    - c
+    - -Wall
+    - -Wextra
+    - -Wpedantic
+    - -Werror
+    - -Wconversion
+    - -Wsign-conversion
+    - -Wshadow
+    - -Wcast-align
+    - -Wcast-qual
+    - -Wstrict-prototypes
+    - -Wmissing-prototypes
+    - -Wold-style-definition
+    - -Wwrite-strings
+    - -Wundef
+    - -Wuninitialized
+    - -Wunreachable-code
+    - -Wdouble-promotion
+    - -Wformat=2
+    - -Wnull-dereference
+    - -Wvla
+    - -Wstack-protector
+    - -Wfloat-equal
+    - -Wpointer-arith
+    - -Wstrict-overflow=5
+    - -fstrict-aliasing
+    - -Wstrict-aliasing=3
+    - -Wpacked
+    - -Wpadded              # 💢 YELL AT ME FOR WASTING BYTES
+
+Diagnostics:
+  ClangTidy:
+    Add:
+      - bugprone-*
+      - cert-*
+      - clang-analyzer-*
+      - concurrency-*
+      - misc-*
+      - modernize-*
+      - performance-*
+      - portability-*
+      - readability-*
+    Remove:
+      - cppcoreguidelines-*  # 💢 C++ NONSENSE, WHYYY IS IT EVEN THERE?? -x c AAAA
+      - readability-identifier-length
+      - misc-no-recursion
+      - bugprone-casting-through-void
+      - readability-braces-around-statements
+  UnusedIncludes: Strict
+  MissingIncludes: Strict

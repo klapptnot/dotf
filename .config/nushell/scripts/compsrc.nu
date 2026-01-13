@@ -2,7 +2,7 @@ def --env get-env [name] { $env | get $name }
 def --env set-env [name, value] { load-env { $name: $value } }
 def --env unset-env [name] { hide-env $name }
 
-let carapace_completer = { |spans: list<string>|
+let external_completer = { |spans: list<string>|
   # if the current command is an alias, get it's expansion
   let expanded_alias = (scope aliases | where name == $spans.0 | get -o 0.expansion)
 
@@ -23,8 +23,8 @@ let carapace_completer = { |spans: list<string>|
   # So, fallback to nushell if its empty
   if $completions != '[]' and $completions != '' {
     ($completions | from json)
-  } else if ((grep -qP $'^($spans.0)$' ~/.nucomp_scripts | complete | get exit_code) == 0) {
-    let completions = (^$spans.0 -nucomp ...($spans))
+  } else if ((grep -qP $'^($spans.0)$' ~/.nucomp | complete | get exit_code) == 0) {
+    let completions = (^$spans.0 @nucomp ...($spans))
     if $completions != '[]' {
       ($completions | from json)
     }
@@ -68,7 +68,7 @@ $current.completions = ($current.completions | default {} external)
 $current.completions.external = (
   $current.completions.external
     | default true enable
-    | default { $carapace_completer } completer
+    | default { $external_completer } completer
 )
 
 $env.config = $current
