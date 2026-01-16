@@ -1,8 +1,7 @@
 CompileFlags:
   Add:
     - -std=c23
-    - -x
-    - c
+    - -xc
     - -Wall
     - -Wextra
     - -Wpedantic
@@ -28,7 +27,6 @@ CompileFlags:
     - -Wpointer-arith
     - -Wstrict-overflow=5
     - -fstrict-aliasing
-    - -Wstrict-aliasing=3
     - -Wpacked
     - -Wpadded              # 💢 YELL AT ME FOR WASTING BYTES
 

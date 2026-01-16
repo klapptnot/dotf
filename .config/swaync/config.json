@@ -12,6 +12,7 @@
   "fit-to-screen": false,
 
   "layer": "top",
+  "layer-shell-cover-screen": false,
   "cssPriority": "user",
   "notification-body-image-height": 100,
   "notification-body-image-width": 200,
@@ -27,10 +28,10 @@
   "script-fail-notify": true,
 
   "widgets": [
-    "buttons-grid",
     "title",
     "notifications",
     "dnd",
+    "buttons-grid",
     "mpris",
     "volume"
   ],
@@ -38,48 +39,35 @@
     "buttons-grid": {
       "actions": [
         {
-          "label": "󰤨  Wifi",
+          "label": "󰤨",
           "type": "toggle",
           "active": true,
           "command": "bash ~/.config/swaync/qs.sh toggle wifi",
           "update-command": "bash ~/.config/swaync/qs.sh query wifi"
         },
         {
-          "label": "󰂯 BT",
+          "label": "󰂯",
           "type": "toggle",
           "active": false,
           "command": "bash ~/.config/swaync/qs.sh toggle bluetooth",
           "update-command": "bash ~/.config/swaync/qs.sh query bluetooth"
         },
         {
-          "label": "󰀝 Airplane",
-          "type": "toggle",
-          "active": false,
-          "command": "bash ~/.config/swaync/qs.sh toggle airplane",
-          "update-command": "bash ~/.config/swaync/qs.sh query airplane"
-        },
-        {
-          "label": "󱩌 Dim",
+          "label": "󱩌",
           "type": "toggle",
           "active": false,
           "command": "bash ~/.config/swaync/qs.sh toggle nightlight",
           "update-command": "bash ~/.config/swaync/qs.sh query nightlight"
         },
         {
-          "label": "󰖂 VPN",
-          "type": "toggle",
-          "active": false,
-          "command": "bash ~/.config/swaync/qs.sh toggle vpn",
-          "update-command": "bash ~/.config/swaync/qs.sh query vpn"
-        },
-        {
-          "label": "󰖔 Theme",
+          "label": "󰖔",
           "type": "toggle",
           "active": false,
           "command": "bash ~/.config/swaync/qs.sh toggle darkmode",
           "update-command": "bash ~/.config/swaync/qs.sh query darkmode"
         }
-      ]
+      ],
+      "buttons-per-row": 4
     },
     "title": {
       "text": "Notifications",
@@ -91,6 +79,7 @@
     },
     "mpris": {
       "show-album-art": "when-available",
+      "autohide": true,
       "loop-carousel": true
     },
     "volume": {
