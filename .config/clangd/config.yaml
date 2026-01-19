@@ -43,10 +43,11 @@ Diagnostics:
       - portability-*
       - readability-*
     Remove:
-      - cppcoreguidelines-*  # 💢 C++ NONSENSE, WHYYY IS IT EVEN THERE?? -x c AAAA
-      - readability-identifier-length
-      - misc-no-recursion
+      - cppcoreguidelines-*  # 💢 C++ NONSENSE, WHYYY IS IT EVEN THERE?? `-xc` AAAA
       - bugprone-casting-through-void
+      - bugprone-easily-swappable-parameters
       - readability-braces-around-statements
+      - misc-no-recursion
+      - readability-identifier-length
   UnusedIncludes: Strict
   MissingIncludes: Strict
