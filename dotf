@@ -313,14 +313,14 @@ function main {
   cd "${MELOC}" || exit 1
 
   local _epilog_lines=(
-    '{acc}Notes\x1b[0m:'
+    '{acc}Notes{r}:'
     '  The script will detect the installed applications and configure them accordingly.'
     '  You can customize the installation process by editing the config file.\n'
-    '{acc}Supported shells\x1b[0m:'
+    '{acc}Supported shells{r}:'
     '  bash, nushell, fish, zsh'
-    '{acc}Supported DEs\x1b[0m:'
+    '{acc}Supported DEs{r}:'
     '  Hyprland\n'
-    'By \x1b[38;5;99mKlapptnot\x1b[0m \x1b[38;5;117mhttps://github.com/Klapptnot\x1b[0m'
+    'By {acc}Klapptnot{r} {any}https://github.com/klapptnot{r}'
   )
 
   barg::parse "${@}" << BARG
@@ -352,11 +352,12 @@ function main {
   @setup P/install-pkgs :flag => DOTF_INSTALL_PKGS "Install packages with pacman/yay"
   @setup R/reload :flag => DOTF_RELOAD_WM "Force WM to reload config"
 
-  @bgmgr ! {
-    l/list: "list"
-    g/get: "download"
-    r/remove: "remove"
-  } "list" => DOTF_BGM_MODE "Background management mode (list, download, remove)"
+  @bgmgr ! "work-mode" {
+    l/list: "list" h"List in-device backgrounds"
+    g/get: "download" h"Download selected groups"
+    r/remove: "remove" h"Remove selected wallpapers"
+  } => DOTF_BGM_MODE
+
   @bgmgr i/index :str "${HOME}/.config/dotf/backgrounds.yaml" => DOTF_BGM_INDEX_FILE "Index file path"
   @bgmgr d/bgmdir :str "${HOME}/.local/share/backgrounds" => DOTF_BGM_ROOT_FOLDER "Backgrounds directory path"
   @bgmgr a/all :flag => DOTF_BGM_ALL_GROUPS "Select all background groups"

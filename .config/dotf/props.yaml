@@ -1,7 +1,7 @@
 # 🔗 https://github.com/klapptnot/dotf
 
 shell_environment:
-  BUN_INSTALL: $ echo -n ~/.bun
+  BARG_COLOR_PALETTE: 38;5;217:38;5;230:38;5;204:38;5;197:38;5;2:38;5;3
   FZF_DEFAULT_COMMAND: >
     fd --type file --follow --hidden
     --exclude '.{local,config,vscode,cargo,rustup,steam,bun}/*'
@@ -16,6 +16,6 @@ shell_environment:
     --color=info:#afaf87,prompt:#d7005f,pointer:#af5fff
     --color=marker:#87ff00,spinner:#af5fff,header:#87afaf
     --wrap
-    
+
   DEBUGINFOD_URLS: https://debuginfod.archlinux.org
 
