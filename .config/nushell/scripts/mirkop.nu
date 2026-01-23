@@ -62,7 +62,7 @@ def git-status-info []: nothing -> record<f: int, i: int, d: int, u: int, U: int
 }
 
 def __left_prompt_command [--transient]: nothing -> string {
-  let dir = match (do --ignore-errors { $env.PWD | path relative-to $nu.home-path }) {
+  let dir = match (do --ignore-errors { $env.PWD | path relative-to $nu.home-dir }) {
     null => $env.PWD
     '' => '~'
     $relative_pwd => ([~, $relative_pwd] | path join)
