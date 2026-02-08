@@ -36,6 +36,7 @@ function yq.sh {
       '#'* | '---') continue ;;
       '') ${multiline} || continue ;;
     esac
+    [[ "${line#*"${line%%[![:space:]]*}"}" == '#'* ]] && continue
     if ${multiline} && [ "${line}" != "" ]; then
       if [ -n "${multiline_str}" ]; then
         ${multiline_fold} && multiline_str+=" " || multiline_str+=$'\n'
