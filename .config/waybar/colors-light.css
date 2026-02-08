@@ -8,10 +8,10 @@
 @define-color ground-mute #d65fb4;
 @define-color ground-deep #b54a97;
 
-@define-color layer0 #ccccff;
-@define-color layer1 #b3b3f2;
-@define-color layer2 #9999e6;
-@define-color layer3 #7f7fd9;
+@define-color layer0 #f3f2ff;  /* highest surface */
+@define-color layer1 #e4e2ff;
+@define-color layer2 #d6d2ff;
+@define-color layer3 #c6c2ff;
 
 @define-color text #2a2f3a;
 @define-color text-soft #3a3f4a;

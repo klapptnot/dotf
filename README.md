@@ -14,39 +14,20 @@
   <a href="https://github.com/klapptnot/dotf/commits"><img src="https://img.shields.io/github/last-commit/klapptnot/dotf?style=for-the-badge&color=eba0ac" alt="GitHub Last Commit" /></a>
 </p>
 
-Table of Contents
------------------
-
-* [About](#about)
-* [Installation](#installation)
-* [Features](#features)
-* [Customization](#customization)
-* [Supported Shells and DEs](#supported-shells-and-des)
-
 About
-------
+-----
 
-This repository contains my personal dotfiles and a simple script to manage them, making it easy to set up a productive workflow.
+This repository contains my personal dotfiles and a script to manage them, making it easy to set up a productive workflow.
 
 Installation
 ------------
 
-#### Manual installation
-
-To use this script, simply clone this repository and run the installation command:
+Clone this repository and run the installation command:
 
 ```bash
-git clone --depth=1 https://github.com/klapptnot/dotf.git
-cd dotf
-./dotf install
-```
-
-#### One-Liner installation
-
-Alternatively, you can install dotf with a single command:
-
-```bash
-curl -s https://raw.githubusercontent.com/klapptnot/dotf/main/dotf | bash
+git clone --depth=1 https://github.com/klapptnot/dotf.git && cd dotf
+# check out dotf --help
+bash dotf setup
 ```
 
 Features
@@ -55,39 +36,32 @@ Features
 * Installs only the required dotfiles based on the apps installed on your system
 * Support for multiple shells, nushell by default
 * Support for Hyprland desktop environment
-* Easy customization through configuration file
+* Background management with index files
+* Fast linking using [bstow](https://github.com/klapptnot/bstow)
+* Easy customization through configuration file (`bash dotf config`)
 
-Customization
--------------
-
-You can customize the installation process by editing the configuration file. To open the configuration file, run:
-```bash
-./dotf config
-```
 Supported Shells and DEs
------------------------
+------------------------
 
 * Shells: bash, nushell, fish, zsh
 * Desktop Environments: Hyprland, Sway
 
-Previews
---------
+<!-- Previews -->
 
-<details>
-<summary><b>Screenshots</b></summary>
-<img alt="Hyprlock" src="https://i.imgur.com/2ACDsEj.png" />
-<img alt="FZF in Kitty" src="https://i.imgur.com/PFnPoCB.png" />
-<img alt="Keybind" src="https://i.imgur.com/ozqrHBk.png" />
-<img alt="Keybind in Neovim" src="https://i.imgur.com/dhun9pF.png" />
-<img alt="Zen Browser (Beef)" src="https://i.imgur.com/UUM3C9u.png" />
-<img alt="GT Tool" src="https://i.imgur.com/rW92qWS.png" />
-<img alt="Basic WiFi Menu" src="https://i.imgur.com/2loyHFa.png" />
-<img alt="Wlogout" src="https://i.imgur.com/x6uY77h.jpeg" />
-</details>
+<!-- -------- -->
 
+<!-- <details> -->
+<!-- <summary><b>Screenshots</b></summary> -->
+<!-- <img alt="Hyprlock" src="https://i.imgur.com/.png" /> -->
+<!-- <img alt="FZF in Kitty" src="https://i.imgur.com/.png" /> -->
+<!-- <img alt="Keybind" src="https://i.imgur.com/.png" /> -->
+<!-- <img alt="Keybind in Neovim" src="https://i.imgur.com/.png" /> -->
+<!-- <img alt="GT Tool" src="https://i.imgur.com/.png" /> -->
+<!-- <img alt="Wlogout" src="https://i.imgur.com/.png" /> -->
+<!-- </details> -->
 
 <p align="center">
-	<img src="https://raw.githubusercontent.com/catppuccin/catppuccin/main/assets/footers/gray0_ctp_on_line.svg?sanitize=true" />
+  <img src="https://raw.githubusercontent.com/catppuccin/catppuccin/main/assets/footers/gray0_ctp_on_line.svg?sanitize=true" />
 </p>
 
 <p align="center">

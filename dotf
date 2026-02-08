@@ -1,9 +1,9 @@
 #!/usr/bin/bash
 # shellcheck disable=SC1091
 
-include barg.sh || exit
-include logger.sh || exit
-include spinner.sh || exit
+include barg.sh
+include logger.sh
+include spinner.sh
 
 function confirm_or_exit {
   printf '%b' "${1}"
@@ -78,7 +78,7 @@ function install_packages {
 
 function __bgm_validate_environment {
   if ! command -v yq &> /dev/null; then
-    log e 'Command `''yq` is required, install it first'
+    log e 'Command yq is required, install it first'
     return 1
   fi
 
@@ -304,11 +304,16 @@ function git_version_gen {
 }
 
 function main {
-  read -r MEPATH < <(realpath "${0}")
+  read -r MEPATH < <(realpath "${BASH_SOURCE[0]}")
   readonly MELOC="${MEPATH%/*}"
-  # shellcheck disable=SC2034
-  declare -g LOGGER_LEVEL=4
   readonly MENAME="${MEPATH##*/}"
+
+  [[ "${MELOC}/dotf" != "${MEPATH}" || ! -e "${MELOC}/dotf" ]] && {
+    log e 'Run this script as a file: assert (%q/dotf == %q)' "${MELOC}" "${MEPATH}"
+    compgen -V all -v BASH
+    declare -p "${all[@]}"
+    return 1
+  }
 
   cd "${MELOC}" || exit 1
 
@@ -374,8 +379,11 @@ BARG
   declare -g pacman_pkgs=()
   declare -g yay_pkgs=()
 
-  # Installation config
-  # shellcheck disable=SC1091
+  [ ! -e "${MELOC}/.iconf.sh" ] && {
+    log e 'Config file missing -> %s' "${MELOC}/.iconf.sh"
+    return 1
+  }
+
   source "${MELOC}/.iconf.sh"
 
   spinner.init

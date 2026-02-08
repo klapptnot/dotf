@@ -9,10 +9,10 @@
 @define-color ground-deep #b54a97;
 
 /* @define-color layer0 #1c1c2b; */
-@define-color layer0 #000000;
-@define-color layer1 #2a2a3f;
-@define-color layer2 #3a3a56;
-@define-color layer3 #4a4a70;
+@define-color layer0 #121212;  /* surface lowest */
+@define-color layer1 #1e1e1e;
+@define-color layer2 #232323;
+@define-color layer3 #2c2c2c;
 
 @define-color text #e0e0f0;
 @define-color text-soft #c0c0d0;
