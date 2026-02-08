@@ -9,17 +9,17 @@ fi
 
 function post_install {
   : "${HOME:?HUH!?}"
-  [ -e "${HOME}/.geoinfo" ] || {
+  [ ! -e "${HOME}/.geoinfo" ] && {
     [ -z "${INSTALL_USER_GEOINFO}" ] && log w "No geographic info given, leaving empty"
     echo "${INSTALL_USER_GEOINFO}" > "${HOME}/.geoinfo"
   }
 
-  local -ra needed_folders=(
+  local -ra ugh_list=(
     "${HOME}/.cache/hyprland"
     "${HOME}/.cache/carapace"
   )
 
-  mkdir -p "${needed_folders[@]}"
+  mkdir -p "${ugh_list[@]}"
 
   command -v hyprlock &> /dev/null && {
     # Toggle file for medialock
@@ -42,12 +42,12 @@ function post_remove {
   : "${HOME:?Why did this fail?}"
   [ -e "${HOME}/.geoinfo" ] && rm -f "${HOME}/.geoinfo"
 
-  local -ra needed_folders=(
-    "${HOME}/.cache/hyprland"
+  local -ra ugh_list=(
+    "${HOME}/.cache/hyprland/medialock.conf"
     "${HOME}/.cache/carapace"
   )
 
-  rm -fr "${needed_folders[@]}"
+  rm -fr "${ugh_list[@]}"
 
   rm -f ~/.cache/hyprland/medialock.conf \
     ~/.cache/carapace/init.fish \

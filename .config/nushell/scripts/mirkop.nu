@@ -32,13 +32,10 @@ def get-path-fg-color []: string -> record<fg: string> {
 }
 
 def get-last-command-duration []: nothing -> string {
-  let duration = (
-    history | last 1
-      | get duration.0
-      | into string
-  )
-  if ($duration | str length) > 0 {
-    $duration | str replace --regex --all '([0-9]+)' $"(ansi plum1)${1}(ansi reset)"
+  let duration = history | last | get --optional duration
+
+  if $duration != null {
+    $duration | into string | str replace --regex --all '([0-9]+)' $"(ansi plum1)${1}(ansi reset)"
   } else {
     ""
   }

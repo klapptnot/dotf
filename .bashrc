@@ -35,6 +35,7 @@ BASHRC_SOURCED=(
   ~/.config/bash/mirkop.sh                   # Change prompt
   ~/.config/bash/functions.sh                # Load util functions
   ~/.config/bash/carapace.sh                 # Load carapace completion
+  ~/.config/bash/bargcomp.sh                 # Load barg completion
   /usr/share/bash-completion/bash_completion # Load bash completion
 )
 

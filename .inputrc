@@ -41,3 +41,6 @@ set completion-map-case on
 
 # truncate completions
 set completion-prefix-display-length 48
+
+# one completion by line
+set completion-display-width 0
