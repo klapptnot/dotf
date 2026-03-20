@@ -63,16 +63,13 @@ pacman_pkgs=(
   bluez-utils
   brightnessctl
   efibootmgr
-  fastfetch
   fd
-  flatpak
   fzf
   git
   github-cli
   gnome-control-center
   gnome-settings-daemon
   grim
-  htop
   hypridle
   hyprland
   hyprlock

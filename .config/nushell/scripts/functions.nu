@@ -1,4 +1,4 @@
-def __unfreeze_last_app [] {
+def __unfreeze_last_app []: nothing -> nothing {
   let frozen  = job list | where type == frozen | last
 
   if $frozen != null {
@@ -6,7 +6,7 @@ def __unfreeze_last_app [] {
   }
 }
 
-def __open_file_nvim [] {
+def __open_file_nvim []: nothing -> nothing {
   let f = (
     fzf
     --prompt 'File: '
@@ -15,3 +15,4 @@ def __open_file_nvim [] {
   )
   if $f.stdout != '' { nvim ($f.stdout | str trim) }
 }
+

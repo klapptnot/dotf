@@ -5,9 +5,8 @@
 #
 # overkill maybe but I don't want swaync to crash
 function run-detach-ish {
-  setsid --fork "${@}" &>/dev/null < /dev/null
+  setsid --fork "${@}" &> /dev/null < /dev/null
 }
-
 
 function command_exists {
   command -v "${1}" > /dev/null 2>&1
@@ -63,7 +62,7 @@ function qs::wifi::toggle {
 function qs::bluetooth::query {
   if command_exists bluetoothctl; then
     local status
-    read -r _ status < <(bluetoothctl show | grep "Powered:")
+    read -r _ status < <(bluetoothctl <<< 'show' | grep "Powered:")
     [[ "${status}" == "yes" ]] && echo "true" || echo "false"
   else
     echo "false"
@@ -73,9 +72,9 @@ function qs::bluetooth::query {
 function qs::bluetooth::toggle {
   if command_exists bluetoothctl; then
     local status
-    read -r _ status < <(bluetoothctl show | grep "Powered:")
+    read -r _ status < <(bluetoothctl <<< 'show' | grep "Powered:")
     if [[ "${status}" == "yes" ]]; then
-      if ! bluetoothctl power off; then
+      if ! bluetoothctl <<< 'power off'; then
         notify-send "Bluetooth" "Bluetooth could not be powered off" -i bluetooth-active
         return
       fi
@@ -90,7 +89,7 @@ function qs::bluetooth::toggle {
         }
       fi
       # shellcheck disable=SC2015
-      if ! bluetoothctl power on; then
+      if ! bluetoothctl <<< 'power on'; then
         command_exists blueman-applet && blueman-applet &> /dev/null &
       else
         notify-send "Bluetooth" "Failed to enable Bluetooth" -i dialog-error
@@ -134,8 +133,7 @@ function __get_nightlight_tool {
   elif command_exists gammastep; then
     ref_ca_command=("gammastep" "-O" "${temp}")
   else
-    notify-send "Error" "No night light tool available" -i dialog-error
-    exit
+    return 1
   fi
 
   return 0
@@ -154,7 +152,10 @@ function qs::nightlight::query {
 
 function qs::nightlight::toggle {
   local -a ca_command=()
-  __get_nightlight_tool 4500 ca_command
+  __get_nightlight_tool 4500 ca_command || {
+    notify-send "Error" "No night light tool available" -i dialog-error
+    exit 1
+  }
 
   if pgrep -x "${ca_command[0]}" > /dev/null; then
     pkill -x "${ca_command[0]}" \
@@ -322,18 +323,24 @@ function main {
   local name="${2}"
 
   if [[ -z "${action}" ]] || [[ -z "${name}" ]]; then
-    echo "Usage: ${0} [query|toggle] [name]"
-    echo "Available functions:"
-    declare -F | grep "^declare -f qs::" | sed 's/declare -f qs::/  ➜ /'
+    echo 'Usage:'
+    echo "       ${0} [query|toggle] [name]"
+    echo "       ${0} [name] [query|toggle]"
+    echo ''
+    echo 'Available functions:'
+    declare -F | grep '^declare -f qs::' | sed 's/declare -f qs::/  ➜ /'
     exit 1
   fi
 
-  local func_name="qs::${name}::${action}"
+  local func_name="qs::${action}::${name}"
+  if ! declare -F "${func_name}" &> /dev/null; then
+    func_name="qs::${name}::${action}"
+  fi
 
   if ! declare -F "${func_name}" &> /dev/null; then
     echo "Error: Function '${func_name}' not found"
-    echo "Available functions:"
-    declare -F | grep "^declare -f qs::" | sed 's/declare -f qs::/  ➜ /'
+    echo 'Available functions:'
+    declare -F | grep '^declare -f qs::' | sed 's/declare -f qs::/  ➜ /'
     exit 1
   fi
 

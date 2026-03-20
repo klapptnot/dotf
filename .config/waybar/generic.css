@@ -291,6 +291,10 @@ window.empty #window {
   }
 }
 
+#battery-grp > widget > #battery {
+  background-color: transparent;
+}
+
 #battery-grp > widget > #battery.good:not(.charging) {
   color: @ok;
 }

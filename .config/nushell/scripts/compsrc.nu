@@ -2,7 +2,7 @@ def --env get-env [name] { $env | get $name }
 def --env set-env [name, value] { load-env { $name: $value } }
 def --env unset-env [name] { hide-env $name }
 
-let barg_allowed: list<string> = open ~/.config/.bargcomp.json
+let barg_allowed: list<string> = (if ('~/.config/.bargcomp.json' | path exists) { open ~/.config/.bargcomp.json } else { [] })
 $env.config.completions.external = {
   enable: true
   max_results: $env.config.completions.external.max_results
@@ -22,6 +22,9 @@ $env.config.completions.external = {
 
     let comps = if ($cmd_name in $barg_allowed) {
       (^$cmd_name @nucomp ...($spans))
+    } else if ([~/.local/comp/ $cmd_name] | path join | path exists) {
+      let comp_f = [~/.local/comp/ $cmd_name] | path join | path expand
+      (^$comp_f ...($spans))
     } else {
       # carapace is annoying when it gives no results
       # and you can't append a file path to the command line

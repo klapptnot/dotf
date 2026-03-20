@@ -7,6 +7,16 @@ unset SESSION_ID
 
 [ -f ~/.config/hypr/setup-env ] && source ~/.config/hypr/setup-env
 
+systemd-run --user --no-block \
+  --unit=hyprwm-socket-wait \
+  --property=Type=oneshot \
+  --property=Wants=graphical-session-pre.target \
+  --property=After=graphical-session-pre.target \
+  --property=Before=graphical-session.target \
+  --ignore-failure \
+  --collect \
+  nu ~/.config/hypr/socket-wait.nu
+
 exec systemd-run --user --pty --wait \
   --unit=hyprwm \
   --slice=session-graphical.slice \
@@ -14,8 +24,7 @@ exec systemd-run --user --pty --wait \
   --property=Wants=graphical-session-pre.target \
   --property=After=graphical-session-pre.target \
   --property=Before=graphical-session.target \
-  --property=Restart=on-failure \
-  --property=RestartSec=1 \
+  --ignore-failure \
   --collect \
   start-hyprland
 

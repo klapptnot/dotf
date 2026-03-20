@@ -15,7 +15,7 @@ def path-shorten []: string -> string {
 }
 
 def get-path-fg-color []: string -> record<fg: string> {
-  if ((which cksum).command?.0? == null) or $env.mirko.rdircolor != true {
+  if $env.mirko.rdircolor != true or ((which cksum).command?.0? == null) {
     return $env.mirko.color.dir
   }
 
@@ -31,20 +31,10 @@ def get-path-fg-color []: string -> record<fg: string> {
   }
 }
 
-def get-last-command-duration []: nothing -> string {
-  let duration = history | last | get --optional duration
-
-  if $duration != null {
-    $duration | into string | str replace --regex --all '([0-9]+)' $"(ansi plum1)${1}(ansi reset)"
-  } else {
-    ""
-  }
-}
-
 def git-status-info []: nothing -> record<f: int, i: int, d: int, u: int, U: int, b: string> {
   let changes = (git diff --shortstat | complete | get stdout | parse --regex '\s*(?<f>[0-9]+)[^0-9]*(?<i>[0-9]+)[^0-9]*(?<d>[0-9]+)')
-  let untracked = (git ls-files --other --exclude-standard | complete | get stdout | lines)
-  let u_folders = ($untracked | each { $in | path dirname } | uniq | length)
+  let untracked = (git ls-files --other --exclude-standard | lines)
+  let u_folders = ($untracked | path dirname | uniq | length)
 
 
   # Create a record with the calculated values
@@ -54,7 +44,7 @@ def git-status-info []: nothing -> record<f: int, i: int, d: int, u: int, U: int
     d: ($changes | get d.0? | default 0 | into int),
     u: ($untracked | length),
     U: $u_folders,
-    b: (git branch --show-current | complete | get stdout | str trim)
+    b: (git branch --show-current)
   }
 }
 
@@ -66,68 +56,63 @@ def __left_prompt_command [--transient]: nothing -> string {
   }
 
   if $env.mirkov.ldir != $dir {
+    $env.mirkov.ldir = $dir
     $env.mirkov.sdir = ($dir | path-shorten)
+    $env.mirkov.cdir = ansi --escape ($dir | get-path-fg-color)
   }
 
-  if $env.mirkov.ldir != $dir {
-    $env.mirkov.cdir = ($dir | get-path-fg-color)
-  }
   if $transient {
-    return $"(ansi --escape $env.mirkov.cdir)($env.mirkov.sdir)(ansi reset):"
+    return $"($env.mirkov.cdir)($env.mirkov.sdir)(ansi reset):"
   }
 
-  # Save last dir for next call
-  $env.mirko.ldir = $dir
-
-  let identity = ([
-    (ansi --escape $env.mirko.color.user),
-    ($env.mirko.str.user),
-    (ansi --escape $env.mirko.color.from),
-    ($env.mirko.str.from),
-    (ansi --escape $env.mirko.color.host),
-    ($env.mirko.str.host),
-    (ansi --escape $env.mirko.color.normal)
-  ] | str join)
-
-  $"($identity):(ansi --escape $env.mirkov.cdir)($env.mirkov.sdir)(ansi reset)"
+  [
+    $env.mirkov.cuser,
+    $env.mirko.str.user,
+    $env.mirkov.cfrom,
+    $env.mirko.str.from,
+    $env.mirkov.chost,
+    $env.mirko.str.host,
+    ' ',
+    $env.mirkov.cdir,
+    $env.mirkov.sdir,
+  ] | str join
 }
 
 def __right_prompt_command [--transient]: nothing -> string {
-  # create a right prompt in grey with brigth grey separators and am/pm underlined
-  let time_segment = (
-    $"(ansi reset)(ansi grey74)(date now | format date '%X')" # try to respect user's locale
-      | str replace --regex --all "([/:])" $"(ansi grey85)${1}(ansi grey74)"
-      | str replace --regex --all "([AP]M)" $"(ansi white_underline)${1}(ansi reset)"
-  )
+  mut parts = []
 
-  if $transient {
-    return $"(ansi --escape $env.mirko.color.normal)($time_segment)(ansi reset)"
+  if not $transient {
+    if ($env.LAST_EXIT_CODE != 0) {
+      $parts ++= [$env.mirkov.cerr, ($env.LAST_EXIT_CODE | into string), "? "]
+    }
+
+    if (git rev-parse --is-inside-work-tree | complete).exit_code == 0 {
+      let col = $env.mirko.color.git
+      let data = (git-status-info)
+
+      if $env.mirko.collapse > (term size).columns {
+        $parts ++= [$col.a, $data.f, $col.s, "@", $col.a, $data.b, $col.s, $env.mirkov.creset, " "]
+      } else {
+        $parts ++= [
+          $col.a, $data.f, $col.s, "@", $col.a, $data.b, $col.s
+          " ", $col.i, "+", $data.i, $col.s, "/", $col.d, "-", $data.d, $col.a,
+          " (● ", $data.u, $col.s, "@", $col.a, $data.U, ")", $env.mirkov.creset, " "
+        ]
+      }
+    }
+
+    let duration = history | last | get --optional duration
+    if $duration != null {
+      $duration | into string | str replace --regex --all '([0-9]+)' $"($env.mirkov.cduration)${1}($env.mirkov.creset)"
+    }
   }
 
-  let last_exit_code = if ($env.LAST_EXIT_CODE != 0) { $" (ansi rb)[($env.LAST_EXIT_CODE)]" } else { "" }
-  let is_git_repo = ((git rev-parse --show-toplevel | complete | get exit_code) == 0)
-  let col = $env.mirko.color.git
-  let should_collapse = ($env.mirko.collapse > (term size).columns)
+  $parts ++= [$env.mirkov.ctime, (date now | format date '%X' |
+    | str replace --regex --all "([/:])" $"($env.mirkov.ctime_sep)${1}($env.mirkov.ctime)"
+    | str replace --regex --all "([AP]M)" $"($env.mirkov.ctime_period)${1}($env.mirkov.creset)"
+  )]
 
-  let git_info = match [($is_git_repo), ($should_collapse)] {
-    [true, true] => {
-      let data = (git-status-info)
-      $"($col.a)($data.f)($col.s)@($col.a)($data.b)($col.s)(ansi reset) "         # <files>@<branch>
-    },
-    [true, false] => {
-      let data = (git-status-info)
-      [
-        $"($col.a)($data.f)($col.s)@($col.a)($data.b)($col.s)",     # <files>@<branch>
-        $" ($col.i)+($data.i)($col.s)/($col.d)-($data.d)($col.a)",  # +<additions>/-<deletions>
-        $" \(● ($data.u)($col.s)@($col.a)($data.U)\)(ansi reset) "  # <untracked_files>@<untracked_folders>
-      ] | str join
-    },
-    _ => ""
-  }
-
-  let duration = get-last-command-duration
-
-  ([$git_info, $duration, $last_exit_code, " ", $time_segment] | str join)
+  $parts | str join
 }
 
 # Initialize config file
@@ -155,9 +140,21 @@ $env.mirko.str.from = (if ($env.SSH_TTY? | default nothing) == nothing { $env.mi
 
 # PWD shortening variables, last short path and short
 $env.mirkov = {
+  # last, short version, current
   ldir: "",
   sdir: "",
-  cdir: ""
+  cdir: "",
+  cuser: (ansi --escape $env.mirko.color.user),
+  cfrom: (ansi --escape $env.mirko.color.from),
+  chost: (ansi --escape $env.mirko.color.host),
+  cnorm: (ansi --escape $env.mirko.color.normal)
+
+  creset:       (ansi reset),
+  ctime:        (ansi grey74),
+  ctime_sep:    (ansi grey85),
+  ctime_period: (ansi white_underline),
+  cduration:    (ansi plum1),
+  cerr:         (ansi rb)
 }
 
 # PROMPT_INDICATOR character for admin|sudo and normal user

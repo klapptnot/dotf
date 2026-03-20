@@ -1,14 +1,24 @@
 #!/usr/bin/bash
 
-# Desktop environment
-command -v Hyprland > /dev/null || printf '^\.config/hypr.*\n'
-command -v swaync > /dev/null || printf '^\.config/swaync.*\n'
-command -v waybar > /dev/null || printf '^\.config/waybar.*\n'
-command -v wlogout > /dev/null || printf '^\.config/wlogout.*\n'
-command -v kitty > /dev/null || printf '^\.config/kitty.*\n'
+declare -A ignore_map=(
+  [Hyprland]='\.config/hypr'
+  [swaync]='\.config/swaync'
+  [waybar]='\.config/waybar'
+  [wlogout]='\.config/wlogout'
+  [kitty]='\.config/kitty'
 
-# Shell
-command -v nu > /dev/null || printf '^\.config/nushell.*\n'
-command -v fish > /dev/null || printf '^\.config/fish.*\n'
-command -v zsh > /dev/null || printf '^\.zshrc$\n'
-command -v bat > /dev/null || printf '^\.config/bat.*\n'
+  [nu]='\.config/nushell'
+  [fish]='\.config/fish'
+  [zsh]='\.zshrc$'
+
+  [hx]='\.config/helix'
+  [clangd]='\.config/clangd'
+
+  [mpv]='\.config/mpv'
+  [ghostty]='\.config/ghostty'
+  [bat]='\.config/bat'
+)
+
+for cmd in "${!ignore_map[@]}"; do
+  command -v "${cmd}" > /dev/null || printf '^%s\n' "${ignore_map[${cmd}]}"
+done

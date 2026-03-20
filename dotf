@@ -18,6 +18,7 @@ function confirm_or_exit {
 function run_or_exit {
   if ! "${@}"; then
     spinner.drop
+
     exit 1
   fi
 }
@@ -36,10 +37,9 @@ function update_sources {
 
   log i "Successfully pulled new changes"
 
-  # Source config for updates
-  source "${MELOC}/.iconf.sh"
   spinner.stop
 
+  source "${MELOC}/.iconf.sh"
   return
 }
 
@@ -49,41 +49,40 @@ function install_packages {
     return
   fi
 
-  spinner.start "Installing packages..."
+  log i 'Spinner not enabled to allow sudo prompts'
   if [ -z "${TERMUX_APP__PACKAGE_NAME@A}" ]; then
     sudo pacman -Syy --noconfirm --needed "${pacman_pkgs[@]}"
 
     # Install Yet Another Yogurt
     if ! command -v yay > /dev/null; then
-      spinner.update "Installing yay (Yet Another Yogurt)"
       local here="${PWD}"
       local yay_folder
 
-      read -r yay_folder < <(mktemp --directory)
+      read -r yay_folder < <(mktemp --directory) || {
+        log e 'Could not create temporary folder'
+        exit 1
+      }
       run_or_exit git clone https://aur.archlinux.org/yay.git "${yay_folder}"
 
       run_or_exit cd "${yay_folder}"
       run_or_exit makepkg -si
 
       run_or_exit cd "${here}"
-      rm -rf "${yay_folder:?Path expected}"
+      rm -rf "${yay_folder}"
     fi
 
-    spinner.update "Installing AUR packages with yay"
     yay -Syy --answerclean All --answerdiff None --noconfirm --needed "${yay_pkgs[@]}"
-
-    spinner.stop
   fi
 }
 
 function __bgm_validate_environment {
   if ! command -v yq &> /dev/null; then
-    log e 'Command yq is required, install it first'
+    log e 'Command yq is required, install it first (go version)'
     return 1
   fi
 
   if [ ! -d "${DOTF_BGM_ROOT_FOLDER}" ]; then
-    log e 'Main folder does not exist or is inaccessible'
+    log e 'Backgrounds folder does not exist or is inaccessible (must be absolute path)'
     return 1
   fi
 
@@ -93,7 +92,7 @@ function __bgm_validate_environment {
   fi
 
   if ! ${DOTF_BGM_ALL_GROUPS} && ((DOTF_EXTRA_ARGS_COUNT < 1)); then
-    log e 'Pass group names as arguments, or pass the `''--all` flag'
+    log e 'Pass group names as arguments, or pass the --all flag'
     return 1
   fi
 
@@ -103,7 +102,11 @@ function __bgm_validate_environment {
 function __bgm_validate_groups {
   local -n groups_ref="${1}"
 
-  mapfile -t groups_ref < <(yq -rM .__groups[] "${DOTF_BGM_INDEX_FILE}")
+  # why yq printing comments too? :weary:
+  while read -r line; do
+    [[ "${line::1}" == '#' ]] && continue
+    groups_ref+=("${line:2}")
+  done < <(yq -M '. | keys' "${DOTF_BGM_INDEX_FILE}")
 
   if ! ${DOTF_BGM_ALL_GROUPS}; then
     for ((i = 0; i < DOTF_EXTRA_ARGS_COUNT; i++)); do
@@ -136,7 +139,7 @@ function bgm_list_backgrounds {
   for grp in "${__groups[@]}"; do
     __bgm_should_process_group "${grp}" || continue
 
-    mapfile -t it_name < <(yq -rM ".${grp}[] | .name" "${DOTF_BGM_INDEX_FILE}")
+    mapfile -t it_name < <(yq -rM ".[\"${grp//\"/\\\"}\"][] | .name" "${DOTF_BGM_INDEX_FILE}")
     local total="${#it_name[@]}"
     local downloaded=0
     for name in "${it_name[@]}"; do
@@ -146,7 +149,7 @@ function bgm_list_backgrounds {
   done
   spinner.stop
 
-  ((${#lines[@]} > 0)) && printf '%-20s %7s background(s) downloaded\n' "${lines[@]}"
+  ((${#lines[@]} > 0)) && printf '%-20s %-7s background(s) downloaded\n' "${lines[@]}"
 }
 
 function bgm_download_backgrounds {
@@ -159,11 +162,14 @@ function bgm_download_backgrounds {
   trap "stop_me=true" SIGINT SIGTERM
 
   declare -A g_total=()
+  readonly max_jobs=4
+  local temp_dir
+  read -r temp_dir < <(mktemp --directory)
   for grp in "${__groups[@]}"; do
     __bgm_should_process_group "${grp}" || continue
 
-    mapfile -t it_name < <(yq -rM ".${grp}[] | .name" "${DOTF_BGM_INDEX_FILE}")
-    mapfile -t it_link < <(yq -rM ".${grp}[] | .link" "${DOTF_BGM_INDEX_FILE}")
+    mapfile -t it_name < <(yq -rM ".[\"${grp//\"/\\\"}\"][] | .name" "${DOTF_BGM_INDEX_FILE}")
+    mapfile -t it_link < <(yq -rM ".[\"${grp//\"/\\\"}\"][] | .link" "${DOTF_BGM_INDEX_FILE}")
     local item_count="${#it_link[@]}"
     local missing=()
     g_total["${grp}"]=0
@@ -181,13 +187,10 @@ function bgm_download_backgrounds {
     done
 
     local to_download="${#missing[@]}"
-    local total_downloaded=0
-    local max_jobs=4
-    local job_pids=()
+    ((to_download < 1)) && continue
 
-    # Create a temporary directory for status tracking
-    local temp_dir
-    read -r temp_dir < <(mktemp -d)
+    local total_downloaded=0
+    local job_pids=()
 
     spinner.start "Downloading files... 0/${to_download}"
 
@@ -243,7 +246,11 @@ function bgm_download_backgrounds {
   [ -d "${temp_dir}" ] && rm -rf "${temp_dir}"
 
   for grp in "${!g_total[@]}"; do
-    log i 'Group %s: %s downloaded' "${grp}" "${g_total["${grp}"]}"
+    if [[ "${g_total["${grp}"]}" == '0' ]]; then
+      log i 'Group %s was already fully downloaded' "${grp}"
+    else
+      log i 'Group %s: %s downloaded' "${grp}" "${g_total["${grp}"]}"
+    fi
   done
 }
 
@@ -257,7 +264,7 @@ function bgm_remove_backgrounds {
   for grp in "${__groups[@]}"; do
     __bgm_should_process_group "${grp}" || continue
 
-    mapfile -t it_name < <(yq -rM ".${grp}[] | .name" "${DOTF_BGM_INDEX_FILE}")
+    mapfile -t it_name < <(yq -rM ".[\"${grp//\"/\\\"}\"][] | .name" "${DOTF_BGM_INDEX_FILE}")
     local item_count="${#it_name[@]}"
 
     for ((i = 0; i < item_count; i++)); do
@@ -341,7 +348,7 @@ function main {
   commands {
     setup: 'Set all configs ready'
     remove: 'Remove added configs'
-    bgmgr: 'Manage background collections'
+    walls: 'Manage background collections'
     config: 'Configure dotfiles settings'
     version: 'Show version information'
   }
@@ -356,16 +363,18 @@ function main {
   @setup g/geoinf :str => DOTF_INSTALL_USER_GEOINFO "User's city and country name"
   @setup P/install-pkgs :flag => DOTF_INSTALL_PKGS "Install packages with pacman/yay"
   @setup R/reload :flag => DOTF_RELOAD_WM "Force WM to reload config"
+  @setup S/simulate :flag => DOTF_SIMULATION_MODE "Simulate rather than making any change"
+  @remove S/simulate :flag => DOTF_SIMULATION_MODE "Simulate rather than making any change"
 
-  @bgmgr ! "work-mode" {
+  @walls ! "work-mode" {
     l/list: "list" h"List in-device backgrounds"
     g/get: "download" h"Download selected groups"
     r/remove: "remove" h"Remove selected wallpapers"
   } => DOTF_BGM_MODE
 
-  @bgmgr i/index :str "${HOME}/.config/dotf/backgrounds.yaml" => DOTF_BGM_INDEX_FILE "Index file path"
-  @bgmgr d/bgmdir :str "${HOME}/.local/share/backgrounds" => DOTF_BGM_ROOT_FOLDER "Backgrounds directory path"
-  @bgmgr a/all :flag => DOTF_BGM_ALL_GROUPS "Select all background groups"
+  @walls i/index :str "${HOME}/.config/dotf/backgrounds.yaml" => DOTF_BGM_INDEX_FILE "Index file path"
+  @walls d/bgmdir :str "${HOME}/.local/share/backgrounds" => DOTF_BGM_ROOT_FOLDER "Backgrounds directory path"
+  @walls a/all :flag => DOTF_BGM_ALL_GROUPS "Select all background groups"
 BARG
 
   # barg::unload
@@ -388,7 +397,11 @@ BARG
 
   spinner.init
 
+  local bstow_args=(--verbose 4 --target ~ --filter ./.stow-ignore.sh)
+  ${DOTF_FORCE_OPERATION} && bstow_args+=(--force)
+  ${DOTF_SIMULATION_MODE} && bstow_args+=(--simulate)
   case "${BARG_SUBCOMMAND}" in
+    walls) backgrounds_manager ;;
     setup)
       case "${DOTF_INSTALL_MODE}" in
         reset)
@@ -398,12 +411,13 @@ BARG
         update)
           confirm_or_exit '\x1b[38;5;87mAll local changes will be discarded, continue anyways?\x1b[0m [Yn]: '
           update_sources
-          bstow --restow --force --verbose 5 --target ~ --filter ./.stow-ignore.sh
-          install_packages
-          post_install
-          ;;
+          bstow_args+=(--restow)
+          ;;&
+        normal)
+          bstow_args+=(--stow)
+          ;;&
         *)
-          bstow --stow --force --verbose 5 --target ~ --filter ./.stow-ignore.sh
+          bstow "${bstow_args[@]}"
           install_packages
           post_install
           ;;
@@ -411,7 +425,7 @@ BARG
       ${DOTF_RELOAD_WM} && hyprctl reload &> /dev/null
       ;;
     remove)
-      bstow --delete --force --verbose 5 --target ~ --filter ./.stow-ignore.sh
+      bstow --delete "${bstow_args[@]}"
       post_remove
       ;;
     config)
@@ -421,7 +435,6 @@ BARG
       fi
       nvim "${MELOC}/.iconf.sh"
       ;;
-    bgmgr) backgrounds_manager ;;
     version)
       spinner.start "Gathering info from remote repo"
       {

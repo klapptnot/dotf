@@ -25,10 +25,9 @@ function yq.sh {
   local pop_2=false
   local multiline=false
   local multiline_fold=false
-  local multiline_strp=s
+  local multiline_strp=true
   local multiline_str=""
-  local multiline_key=""
-  local npath mmode smode #imode
+  local npath discr mmode smode #imode
   local indent=2
   local RESULT=""
   for line in "${lines[@]}"; do
@@ -37,27 +36,32 @@ function yq.sh {
       '') ${multiline} || continue ;;
     esac
     [[ "${line#*"${line%%[![:space:]]*}"}" == '#'* ]] && continue
-    if ${multiline} && [ "${line}" != "" ]; then
-      if [ -n "${multiline_str}" ]; then
-        ${multiline_fold} && multiline_str+=" " || multiline_str+=$'\n'
-      fi
+    if ${multiline}; then
+      discr="${line::$((ci + indent))}"
+      if [ -n "${line}" ] && [[ -z "${discr#*"${discr%%[![:space:]]*}"}" ]]; then
+        if [ -n "${multiline_str}" ]; then
+          ${multiline_fold} && multiline_str+=" " || multiline_str+=$'\n'
+        fi
 
-      multiline_str+="${line:$((ci + indent)):${#line}}"
-      continue
-    elif ${multiline}; then
-      multiline=false
-      k="${multiline_key}"
+        multiline_str+="${line:$((ci + indent)):${#line}}"
+        continue
+      fi
       v="${multiline_str}"
+
       ${multiline_strp} && v="${v%"${v##*[![:space:]\n]}"}"
       ${multiline_fold} && v="${v%"${v##*[![:space:]\n]}"}"
+
+      IFS=. npath=".${fpa[*]}"
+      loaded[${npath}]="${v}"
+
       multiline_str=''
-      multiline_key=''
-    else
-      IFS=':' read -r key val <<< "${line}"
-      k="${key#"${key%%[![:space:]]*}"}"
-      # v="${val#*[[:space:]]}"
-      v="${val:1}"
+      multiline=false
     fi
+
+    IFS=':' read -r key val <<< "${line}"
+    k="${key#"${key%%[![:space:]]*}"}"
+    # v="${val#*[[:space:]]}"
+    v="${val:1}"
 
     : "${key%%[![:space:]]*}"
     ci="${#_}"
@@ -97,7 +101,6 @@ function yq.sh {
       mmode="${v:0:1}" # |>
       smode="${v:1:1}" # -+
       # imode="${v:2}"   # 0-9
-      multiline_key="${k}"
       multiline=true
 
       multiline_fold=false
@@ -151,4 +154,3 @@ function yq.sh {
 
   return 0
 }
-

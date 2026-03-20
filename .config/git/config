@@ -1,13 +1,27 @@
-[url "https://github.com/:"]
+[url "https://github.com/"]
     insteadOf = "gh:"
 
 [init]
     defaultBranch = main
 
+[alias]
+    pom = push origin -u main
+    puff = pull --ff-only
+    lol = log --oneline --graph --decorate --all
+
 [core]
+    editor = nvim
     compression = 9  # trade cpu for network
     fsync = none
+    autocrlf = input
     whitespace = error  # threat incorrect whitespace as errors
+    excludesfile = ~/_/.gitignore
+
+[color]
+    ui = true
+    branch = auto
+    diff = auto
+    status = auto
 
 [blame]
     coloring = highlightRecent
