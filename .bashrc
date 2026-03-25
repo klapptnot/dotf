@@ -69,14 +69,14 @@ bind -x '"\C-o": __fzf_nvim_open_file'
 bind -x '"\C-u": __fzf_cat_file'
 
 source ~/.config/bash/yq.sh
-declare -Ag SHELL_ENV_CFG
-yq.sh SHELL_ENV_CFG ~/.config/dotf/props.yaml
+declare -Ag root
+yq.sh ~/.config/dotf/props.yaml root
 unset -f yq.sh
 
-for key in ${!SHELL_ENV_CFG[@]}; do
+for key in ${!root[@]}; do
   [[ ${key} == .shell_environment.* ]] || continue
 
-  value="${SHELL_ENV_CFG[${key}]}"
+  value="${root[${key}]}"
   key="${key#.shell_environment.}"
 
   if [[ "${value}" == '$ '* ]]; then
@@ -85,7 +85,7 @@ for key in ${!SHELL_ENV_CFG[@]}; do
     export "${key}=${value}"
   fi
 done
-unset -v key value SHELL_ENV_CFG
+unset -v key value root
 
 # if not login shell ignore the rest
 ! shopt -q login_shell && return

@@ -251,45 +251,44 @@ function __mirkop_load_prompt_config {
     printf '\\033[38;2;%d;%d;%dm' ${r} ${g} ${b}
   }
 
-  local from_key="base"
-  [ -n "${SSH_TTY@A}" ] && from_key="sshd"
+  local from_key="from.base"
+  [ -n "${SSH_TTY@A}" ] && from_key="from.sshd"
 
-  local delim_key="else"
-  ((EUID == 0)) && delim_key="root"
+  local delim_key="char.else"
+  ((EUID == 0)) && delim_key="char.root"
 
   source ~/.config/bash/yq.sh
-  declare -A MIRKOP_YAML_CFG
-  yq.sh MIRKOP_YAML_CFG ~/.config/mirkop.yaml
-  unset -f yq.sh
+  declare -A root str color
+  yq.sh ~/.config/mirkop.yaml root str color
 
   # MIRKOP_CONFIG
   declare -ga MIRKOP_CONFIG=(
-    [0]="${MIRKOP_YAML_CFG[.transient]}" # Transient prompt
-    [1]="${MIRKOP_YAML_CFG[.rdircolor]}" # Enable CWD color based on string
-    [2]="${MIRKOP_YAML_CFG[.date_fmt]}"  # Date format
-    [3]=true                             # Manage window title
+    [0]="${root[transient]}" # Transient prompt
+    [1]="${root[rdircolor]}" # Enable CWD color based on string
+    [2]="${root[date_fmt]}"  # Date format
+    [3]=true                 # Manage window title
   )
 
   # MIRKOP_STRINGS
   declare -ga MIRKOP_STRINGS=(
-    [0]="${MIRKOP_YAML_CFG[.str.user]}"              # Username
-    [1]="${MIRKOP_YAML_CFG[.str.from.${from_key}]}"  # From string
-    [2]="${MIRKOP_YAML_CFG[.str.host]}"              # Hostname
-    [3]="${MIRKOP_YAML_CFG[.str.char.${delim_key}]}" # Delimiter
+    [0]="${str[user]}"         # Username
+    [1]="${str[${from_key}]}"  # From string
+    [2]="${str[host]}"         # Hostname
+    [3]="${str[${delim_key}]}" # Delimiter
   )
 
   # MIRKOP_COLORS
-  read -r c_user < <(hex_to_shell "${MIRKOP_YAML_CFG[.color.user.fg]}")
-  read -r c_from < <(hex_to_shell "${MIRKOP_YAML_CFG[.color.from.fg]}")
-  read -r c_host < <(hex_to_shell "${MIRKOP_YAML_CFG[.color.host.fg]}")
-  read -r c_norm < <(hex_to_shell "${MIRKOP_YAML_CFG[.color.normal.fg]}")
-  read -r c_err < <(hex_to_shell "${MIRKOP_YAML_CFG[.color.error.fg]}")
-  read -r c_dir < <(hex_to_shell "${MIRKOP_YAML_CFG[.color.dir.fg]}")
-  read -r c_jobs < <(hex_to_shell "${MIRKOP_YAML_CFG[.color.jobs.fg]}")
-  read -r git_ins < <(hex_to_shell "${MIRKOP_YAML_CFG[.color.git.i.fg]}")
-  read -r git_del < <(hex_to_shell "${MIRKOP_YAML_CFG[.color.git.d.fg]}")
-  read -r git_any < <(hex_to_shell "${MIRKOP_YAML_CFG[.color.git.a.fg]}")
-  read -r git_sep < <(hex_to_shell "${MIRKOP_YAML_CFG[.color.git.s.fg]}")
+  read -r c_user < <(hex_to_shell "${color['user.fg']}")
+  read -r c_from < <(hex_to_shell "${color['from.fg']}")
+  read -r c_host < <(hex_to_shell "${color['host.fg']}")
+  read -r c_norm < <(hex_to_shell "${color['normal.fg']}")
+  read -r c_err < <(hex_to_shell "${color['error.fg']}")
+  read -r c_dir < <(hex_to_shell "${color['dir.fg']}")
+  read -r c_jobs < <(hex_to_shell "${color['jobs.fg']}")
+  read -r git_ins < <(hex_to_shell "${color['git.i.fg']}")
+  read -r git_del < <(hex_to_shell "${color['git.d.fg']}")
+  read -r git_any < <(hex_to_shell "${color['git.a.fg']}")
+  read -r git_sep < <(hex_to_shell "${color['git.s.fg']}")
 
   declare -ga MIRKOP_COLORS=(
     [0]="${c_user}"   # User color
@@ -305,6 +304,7 @@ function __mirkop_load_prompt_config {
     [10]="${git_sep}" # Git separator color
   )
   unset -f hex_to_shell
+  unset -v root str color
   return 0
 }
 #endregion
