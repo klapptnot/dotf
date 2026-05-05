@@ -1,0 +1,87 @@
+#!/usr/bin/bash
+# Swap workspace names with current: swapworkspace <target>
+# 🔗 https://github.com/klapptnot/dotf
+
+function log::info  { printf '\x1b[38;5;50m[info]\x1b[0m  %s\n' "${*}"; }
+function log::warn  { printf '\x1b[38;5;3m[warn]\x1b[0m  %s\n' "${*}" >&2; }
+function log::error { printf '\x1b[38;5;9m[error]\x1b[0m %s\n' "${*}" >&2; }
+
+function ws::resolve {
+  local -r input="${1}"
+  local -r int_regex='^[0-9]+$'
+
+  if [[ "${input}" =~ ${int_regex} ]]; then
+    local name
+    read -r name < <(
+      hyprctl workspaces -j | jq -r --argjson ws "${input}" \
+        '.[] | select(.id == $ws) | .name // empty'
+    )
+    if [[ -z "${name}" ]]; then
+      log::error "workspace id ${input} has no name"
+      return 1
+    fi
+    printf '%s\n' "${name}"
+  else
+    local match
+    read -r match < <(
+      hyprctl workspaces -j | jq -r --arg n "${input}" \
+        '.[] | select(.name == $n) | .name // empty'
+    )
+    if [[ -z "${match}" ]]; then
+      log::error "workspace name '${input}' not found"
+      return 1
+    fi
+    printf '%s\n' "${match}"
+  fi
+}
+
+function ws::get_id_by_name {
+  local -r name="${1}"
+  hyprctl workspaces -j | jq -r --arg n "${name}" \
+    '.[] | select(.name == $n) | .id'
+}
+
+function main {
+  local -r tgt="${1#name:}"
+
+  if [[ -z "${tgt}" ]]; then
+    log::error "usage: ${0} <target>"
+    exit 1
+  fi
+
+  # Get current workspace name and id in one shot
+  local src_name src_id
+  {
+    read -r src_id
+    read -r src_name
+  } < <(hyprctl activeworkspace -j | jq -r '.id, (.name // empty)')
+
+  if [[ -z "${src_name}" ]]; then
+    log::error "current workspace has no name"
+    exit 1
+  fi
+
+  # Guard: special:special (or bare "special") cannot be swapped
+  # if [[ "${src_name#special:}" == 'special' || "${tgt#special:}" == 'special' ]]; then
+  #   log::error "cannot swap special:special"
+  #   exit 1
+  # fi
+
+  local tgt_name
+  read -r tgt_name < <(ws::resolve "${tgt}") || exit 1
+
+  if [[ "${src_name}" == "${tgt_name}" ]]; then
+    log::warn "already on \"${src_name}\", nothing to do"
+    exit 0
+  fi
+
+  local tgt_id
+  read -r tgt_id < <(ws::get_id_by_name "${tgt_name}")
+
+  hyprctl --batch \
+    "dispatch renameworkspace ${src_id} ${tgt_name} ; dispatch renameworkspace ${tgt_id} ${src_name}" &>/dev/null
+
+  log::info "swapped \"${src_name}\" ↔ \"${tgt_name}\" 🩵"
+}
+
+main "${@}"

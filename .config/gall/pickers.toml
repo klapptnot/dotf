@@ -1,6 +1,6 @@
 css_reload = false
 terminal = "kitty"
-launch_prefix = "z3-run"
+launch_prefix = "dotf-run"
 
 [[apps]]
 name = "WhatsApp"

@@ -1,0 +1,64 @@
+#!/bin/bash
+
+function die {
+  printf '\x1b[38;5;9m%s\x1b[0m\n' "${1}" >&2
+  exit 1
+}
+
+BASH_LOADABLES=("/usr/lib/bash/sleep" "/usr/lib64/bash/sleep" "/usr/local/lib/bash/sleep")
+BUILTIN_LOADED="false"
+
+for path in "${BASH_LOADABLES[@]}"; do
+  if [[ -f "${path}" ]]; then
+    enable -f "${path}" sleep && BUILTIN_LOADED="true" && break
+  fi
+done
+
+if [[ "${BUILTIN_LOADED}" == "false" ]]; then
+  die "Could not enable sleep builtin. Dying."
+  exit 1
+fi
+
+declare -i max_iter="15"
+declare -- hypr_runtime_dir="${XDG_RUNTIME_DIR}/hypr"
+
+for ((i=1; i<=max_iter; i++)); do
+  [[ -d "${hypr_runtime_dir}" ]] && break
+  sleep 0.25
+done
+
+if [[ ! -d "${hypr_runtime_dir}" ]]; then
+  die "Max iterations reached waiting for hypr directory"
+fi
+
+declare -a instance_dirs=("${hypr_runtime_dir}"/*/)
+declare -i old_instances="${#instance_dirs[@]}"
+
+declare -- hypr_instance_dir=""
+
+for ((i=1; i<=max_iter; i++)); do
+  current_instances=("${hypr_runtime_dir}"/*/)
+  if (( "${#current_instances[@]}" > old_instances )); then
+    hypr_instance_dir="${current_instances[-1]}"
+    hypr_instance_dir="${hypr_instance_dir%/}"
+    break
+  fi
+  sleep 0.1
+done
+
+if [[ -z "${hypr_instance_dir}" ]]; then
+  die "Max iterations reached waiting for new instance directory"
+fi
+
+declare -- hypr_instance_signature="${hypr_instance_dir##*/}"
+declare -- socket_path="${hypr_instance_dir}/.socket.sock"
+
+for ((i=1; i<=max_iter; i++)); do
+  if [[ -e "${socket_path}" ]]; then
+    echo systemctl --user set-environment "HYPRLAND_INSTANCE_SIGNATURE=${hypr_instance_signature}"
+    exit 0
+  fi
+  sleep 0.1
+done
+
+die "Max iterations reached waiting for socket in ${hypr_instance_dir}"

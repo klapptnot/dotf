@@ -36,7 +36,7 @@ function show_window {
       local ARGS="${BASH_REMATCH[5]}"
       local DESC="${BASH_REMATCH[6]:-none}"
       if [[ "${ARGS}" == -* ]]; then
-        BINDINGS+=("${MOD}" "${KEY}" "${DESC}" "${CMD}" -- "${ARGS}")
+        BINDINGS+=("${MOD}" "${KEY}" "${DESC}" "${CMD}" "${ARGS}")
       else
         BINDINGS+=("${MOD}" "${KEY}" "${DESC}" "${CMD}" "${ARGS}")
       fi
@@ -77,7 +77,7 @@ function show_window {
     --title="${title}" --no-buttons --list \
     --dclick-action "${THIS_SCRIPT} %s" \
     --column="Mod key" --column="Key" --column="Description" --column="Hyprland dispatcher" --column="Command args" \
-    "${BINDINGS[@]}"
+    -- "${BINDINGS[@]}"
 
   return 0
 }

@@ -2,6 +2,7 @@
 
 # Simple, nice and customizable shell prompt
 
+# Get a short version of input path
 def path-shorten []: string -> string {
   let path_parts = ($in | path split)
 
@@ -14,24 +15,8 @@ def path-shorten []: string -> string {
   } | append ($path_parts | last) | path join
 }
 
-def get-path-fg-color []: string -> record<fg: string> {
-  if $env.mirko.rdircolor != true or ((which cksum).command?.0? == null) {
-    return $env.mirko.color.dir
-  }
-
-  let hex = (
-    ($in | cksum | split row " ").0
-    | awk '{printf "%x", $1}'
-    | fill --width 6 --character 0
-    | str substring ..5
-  )
-
-  return {
-    fg: $"#($hex)"
-  }
-}
-
-def git-status-info []: nothing -> record<f: int, i: int, d: int, u: int, U: int, b: string> {
+# git information/summary for right prompt use
+def get-git-info []: nothing -> record<added: int, inserted: int, deleted: int, untracked: int, folders: int, branch: string> {
   let changes = (git diff --shortstat | complete | get stdout | parse --regex '\s*(?<f>[0-9]+)[^0-9]*(?<i>[0-9]+)[^0-9]*(?<d>[0-9]+)')
   let untracked = (git ls-files --other --exclude-standard | lines)
   let u_folders = ($untracked | path dirname | uniq | length)
@@ -39,12 +24,12 @@ def git-status-info []: nothing -> record<f: int, i: int, d: int, u: int, U: int
 
   # Create a record with the calculated values
   {
-    f: ($changes | get f.0? | default 0 | into int),
-    i: ($changes | get i.0? | default 0 | into int),
-    d: ($changes | get d.0? | default 0 | into int),
-    u: ($untracked | length),
-    U: $u_folders,
-    b: (git branch --show-current)
+    added: ($changes | get f.0? | default 0 | into int),
+    inserted: ($changes | get i.0? | default 0 | into int),
+    deleted: ($changes | get d.0? | default 0 | into int),
+    untracked: ($untracked | length),
+    folders: $u_folders,
+    branch: (git branch --show-current)
   }
 }
 
@@ -58,7 +43,7 @@ def __left_prompt_command [--transient]: nothing -> string {
   if $env.mirkov.ldir != $dir {
     $env.mirkov.ldir = $dir
     $env.mirkov.sdir = ($dir | path-shorten)
-    $env.mirkov.cdir = ansi --escape ($dir | get-path-fg-color)
+    $env.mirkov.cdir = ansi --escape { fg: $"#($dir | hash md5 | str substring ..5)" }
   }
 
   if $transient {
@@ -87,16 +72,16 @@ def __right_prompt_command [--transient]: nothing -> string {
     }
 
     if (git rev-parse --is-inside-work-tree | complete).exit_code == 0 {
-      let col = $env.mirko.color.git
-      let data = (git-status-info)
+      let color = $env.mirko.color.git
+      let data = (get-git-info)
 
       if $env.mirko.collapse > (term size).columns {
-        $parts ++= [$col.a, $data.f, $col.s, "@", $col.a, $data.b, $col.s, $env.mirkov.creset, " "]
+        $parts ++= [$color.a, $data.added, $color.s, "@", $color.a, $data.branch, $color.s, $env.mirkov.creset, " "]
       } else {
         $parts ++= [
-          $col.a, $data.f, $col.s, "@", $col.a, $data.b, $col.s
-          " ", $col.i, "+", $data.i, $col.s, "/", $col.d, "-", $data.d, $col.a,
-          " (● ", $data.u, $col.s, "@", $col.a, $data.U, ")", $env.mirkov.creset, " "
+          $color.a, $data.added, $color.s, "@", $color.a, $data.branch, $color.s
+          " ", $color.i, "+", $data.inserted, $color.s, "/", $color.d, "-", $data.deleted, $color.a,
+          " (● ", $data.untracked, $color.s, "@", $color.a, $data.folders, ")", $env.mirkov.creset, " "
         ]
       }
     }

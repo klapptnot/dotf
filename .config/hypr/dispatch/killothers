@@ -1,9 +1,0 @@
-#!/usr/bin/bash
-# Kill all other window processes in workspace
-# 🔗 https://github.com/klapptnot/dotf
-
-jq -rM --null-input \
-  --argjson c "$(hyprctl clients -j)" \
-  --argjson w "$(hyprctl activeworkspace -j)" \
-  '$c[] | select(.workspace.id == $w.id) | select(.focusHistoryID != 0) | .pid' | \
-  xargs --no-run-if-empty kill

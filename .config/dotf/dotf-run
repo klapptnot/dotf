@@ -3,10 +3,10 @@
 declare -ri max_tries=5
 declare -i tries=0
 
-systemctl --user reset-failed 'hypr-uproc-*' 2> /dev/null
+systemctl --user reset-failed 'dotf-uproc-*' 2> /dev/null
 while ((tries < max_tries)); do
   read -r rsm < <(rsum -l 8 -c 'a-z0-9')
-  unit_name="hypr-uproc-${rsm}"
+  unit_name="dotf-uproc-${rsm}"
 
   systemctl --quiet --user is-active --all "${unit_name}" || break
   ((tries++))

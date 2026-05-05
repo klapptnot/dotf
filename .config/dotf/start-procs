@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+# reset first, to only keep running ones (if nor running, they disappear)
+# because they are also transient, started with `systemd-run`
+systemctl --user reset-failed 'dotf-autostart-*' 2> /dev/null
+
+if [ "${1}" == '--stop' ]; then
+  systemctl --quiet --user is-active --all 'dotf-autostart-*' \
+    && systemctl --user stop 'dotf-autostart-*'
+  exit "${?}"
+fi
+
+function run_as_unit {
+  {
+    read -r rsm < <(rsum -l 8 -c 'a-z0-9')
+    local unit_name="dotf-autostart-${rsm}"
+
+    local -a systemd_args=(
+      --user
+      --property=BindsTo=hyprwm.service
+      --property=After=hyprwm.service
+      --slice=background-graphical.slice
+      --unit="${unit_name}"
+    )
+
+    if [[ "${1}" == "@gnome" ]]; then
+      shift
+      systemd_args+=(
+        --setenv=XDG_CURRENT_DESKTOP=GNOME
+        --setenv=XDG_SESSION_DESKTOP=gnome
+      )
+    fi
+
+    systemd-run "${systemd_args[@]}" -- "${@}" &> /dev/null
+  } &
+}
+
+if ((${#} > 0)); then
+  run_as_unit "${@}"
+  exit 0
+fi
+
+# do not start any unit if some units are running, print them
+systemctl --quiet --user is-active --all 'dotf-autostart-*' && {
+  systemctl --user list-units 'dotf-autostart-*' --no-legend | awk '{print $1 " " $4 " " $6}'
+  exit 0
+}
+
+run_as_unit fcitx5
+run_as_unit lbagtk
+

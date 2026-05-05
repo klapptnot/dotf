@@ -1,0 +1,20 @@
+#!/usr/bin/bash
+# Close window(s): [me|others] (default: me)
+# 🔗 https://github.com/klapptnot/dotf
+
+case "${1:-me}" in
+  me)
+    hyprctl dispatch killactive # does not kill, closes window
+    ;;
+  others)
+    jq -rM --null-input \
+      --argjson c "$(hyprctl clients -j)" \
+      --argjson w "$(hyprctl activeworkspace -j)" \
+      '$c[] | select(.workspace.id == $w.id) | select(.focusHistoryID != 0) | "address:" + .address' | \
+      xargs --no-run-if-empty --max-args 1 hyprctl dispatch closewindow
+    ;;
+  *)
+    printf 'usage: close [me|others]\n' >&2
+    exit 1
+    ;;
+esac

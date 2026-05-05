@@ -1,5 +1,6 @@
 # 🔗 https://github.com/klapptnot/dotf
 
+# goto aliases, same info `goto -l` prints
 def get-aliased-paths []: nothing -> table<alias: list<string>, expand: list<string>> {
   let def = if ("~/.config/dotf/goto.idx" | path exists) {
     (open ~/.config/dotf/goto.idx | lines)
@@ -35,8 +36,7 @@ export def --env gt [
   let def = get-aliased-paths
 
   if $list {
-    print $def
-    return
+    return $def
   }
 
   if $path == "" {

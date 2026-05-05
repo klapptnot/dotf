@@ -91,7 +91,7 @@ function __bgm_validate_environment {
     return 1
   fi
 
-  if ! ${DOTF_BGM_ALL_GROUPS} && ((DOTF_EXTRA_ARGS_COUNT < 1)); then
+  if [[ "${DOTF_BGM_ALL_GROUPS}" != 'true' ]] && ((DOTF_SPARE_ARGS_COUNT < 1)); then
     log e 'Pass group names as arguments, or pass the --all flag'
     return 1
   fi
@@ -109,9 +109,9 @@ function __bgm_validate_groups {
   done < <(yq -M '. | keys' "${DOTF_BGM_INDEX_FILE}")
 
   if ! ${DOTF_BGM_ALL_GROUPS}; then
-    for ((i = 0; i < DOTF_EXTRA_ARGS_COUNT; i++)); do
-      if ! barg::is_in_arr "${DOTF_EXTRA_ARGS[i]}" "${groups_ref[@]}"; then
-        log e 'The group "%s" does not exist' "${DOTF_EXTRA_ARGS[i]}"
+    for ((i = 0; i < DOTF_SPARE_ARGS_COUNT; i++)); do
+      if ! barg::is_in_arr "${DOTF_SPARE_ARGS[i]}" "${groups_ref[@]}"; then
+        log e 'The group "%s" does not exist' "${DOTF_SPARE_ARGS[i]}"
       fi
     done
   fi
@@ -122,7 +122,7 @@ function __bgm_validate_groups {
 function __bgm_should_process_group {
   local grp="${1}"
 
-  if ! ${DOTF_BGM_ALL_GROUPS} && ! barg::is_in_arr "${grp}" "${DOTF_EXTRA_ARGS[@]}"; then
+  if ! ${DOTF_BGM_ALL_GROUPS} && ! barg::is_in_arr "${grp}" "${DOTF_SPARE_ARGS[@]}"; then
     return 1
   fi
 
@@ -279,18 +279,26 @@ function bgm_remove_backgrounds {
   log i "Removed %d files" "${total_rmed}"
 }
 
-function backgrounds_manager {
-  case "${DOTF_BGM_MODE}" in
-    list)
-      bgm_list_backgrounds
-      ;;
-    download)
-      bgm_download_backgrounds
-      ;;
-    remove)
-      bgm_remove_backgrounds
-      ;;
-  esac
+function de::dispatch {
+  local -r name="${1:-}"
+  local -r script="${HOME}/.config/hypr/dispatch/${name}"
+
+  if [[ "${DOTF_DISPATCH_LIST:-false}" == 'true' ]]; then
+    mapfile -t scripts < <(find "${HOME}/.config/hypr/dispatch" -maxdepth 1 ! -type d -executable)
+    for s in "${scripts[@]}"; do
+      local desc=''
+      read -r desc < <(tail -n +2 "${s}")
+      printf '%-20s  %s\n' "${s##*/}" "${desc##'# '}"
+    done
+    return 0
+  fi
+
+  [[ -n "${name}" ]] || { log e 'dispatch: no script name given'; return 1; }
+  [[ -f "${script}" ]] || { log e 'dispatch: script not found: %s' "${name}"; return 1; }
+  [[ -x "${script}" ]] || { log e 'dispatch: script not executable: %s' "${name}"; return 1; }
+
+  shift
+  exec "${script}" "${@}"
 }
 
 # shellcheck disable=SC2155
@@ -317,8 +325,6 @@ function main {
 
   [[ "${MELOC}/dotf" != "${MEPATH}" || ! -e "${MELOC}/dotf" ]] && {
     log e 'Run this script as a file: assert (%q/dotf == %q)' "${MELOC}" "${MEPATH}"
-    compgen -V all -v BASH
-    declare -p "${all[@]}"
     return 1
   }
 
@@ -339,7 +345,7 @@ function main {
   #[always]
   meta {
     summary: 'Installation helper script'
-    spare_args_var: 'DOTF_EXTRA_ARGS'
+    spare_args_var: 'DOTF_SPARE_ARGS'
     epilog_lines: '_epilog_lines'
     subcommand_required: true
     help_enabled: true
@@ -348,7 +354,8 @@ function main {
   commands {
     setup: 'Set all configs ready'
     remove: 'Remove added configs'
-    walls: 'Manage background collections'
+    *dispatch: 'Dispatch functions to DE'
+    *walls: 'Manage background collections'
     config: 'Configure dotfiles settings'
     version: 'Show version information'
   }
@@ -364,7 +371,11 @@ function main {
   @setup P/install-pkgs :flag => DOTF_INSTALL_PKGS "Install packages with pacman/yay"
   @setup R/reload :flag => DOTF_RELOAD_WM "Force WM to reload config"
   @setup S/simulate :flag => DOTF_SIMULATION_MODE "Simulate rather than making any change"
+  @setup v/verbose :int 4 => DOTF_STOW_LOG_LVL "Forward log level to bstow, from 0 to 5"
+
   @remove S/simulate :flag => DOTF_SIMULATION_MODE "Simulate rather than making any change"
+  @remove v/verbose :int 4 => DOTF_STOW_LOG_LVL "Forward log level to bstow, from 0 to 5"
+  @dispatch l/list :flag => DOTF_DISPATCH_LIST "List available dispatchers"
 
   @walls ! "work-mode" {
     l/list: "list" h"List in-device backgrounds"
@@ -379,9 +390,7 @@ BARG
 
   # barg::unload
 
-  # mapfile -t vars < <(compgen -v DOTF_)
-  # declare -p "${vars[@]}"
-  # exit
+  [[ "${BARG_SUBCOMMAND}" == 'dispatch' ]] && de::dispatch "${DOTF_SPARE_ARGS[@]}"
 
   ${DOTF_FORCE_OPERATION} && log w "Any operation can be forced"
 
@@ -397,11 +406,23 @@ BARG
 
   spinner.init
 
-  local bstow_args=(--verbose 4 --target ~ --filter ./.stow-ignore.sh)
+  local bstow_args=(--verbose "${DOTF_STOW_LOG_LVL}" --target ~ --filter ./.stow-ignore.sh)
   ${DOTF_FORCE_OPERATION} && bstow_args+=(--force)
   ${DOTF_SIMULATION_MODE} && bstow_args+=(--simulate)
   case "${BARG_SUBCOMMAND}" in
-    walls) backgrounds_manager ;;
+    walls)
+      case "${DOTF_BGM_MODE}" in
+        list)
+          bgm_list_backgrounds
+          ;;
+        download)
+          bgm_download_backgrounds
+          ;;
+        remove)
+          bgm_remove_backgrounds
+          ;;
+      esac
+      ;;
     setup)
       case "${DOTF_INSTALL_MODE}" in
         reset)
@@ -446,7 +467,7 @@ BARG
 
       log i 'klapptnot/dotf %s' "${local_version}"
       if ((new_commits > 0)); then
-        log i '\nUpdates available (%s), to update run `''%s install --update`' "${remote_version}" "${MENAME}"
+        log i '\nUpdates available (%s), to update run `''%s setup --update`' "${remote_version}" "${MENAME}"
       fi
       ;;
   esac

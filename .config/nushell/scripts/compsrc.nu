@@ -1,11 +1,14 @@
-def --env get-env [name] { $env | get $name }
-def --env set-env [name, value] { load-env { $name: $value } }
-def --env unset-env [name] { hide-env $name }
+# get env var :cmpsrc.nu
+def --env get-env [name: string] { $env | get $name }
+# add or edit env var :cmpsrc.nu
+def --env set-env [name: string, value: any] { load-env { $name: $value } }
+# remove env var :cmpsrc.nu
+def --env unset-env [name: string] { hide-env $name }
 
-let barg_allowed: list<string> = (if ('~/.config/.bargcomp.json' | path exists) { open ~/.config/.bargcomp.json } else { [] })
+let __compsrc_exec: list<string> = (if ('~/.config/.bargcomp.json' | path exists) { open ~/.config/.bargcomp.json } else { [] })
 $env.config.completions.external = {
   enable: true
-  max_results: $env.config.completions.external.max_results
+  max_results: ($env.config | get --optional completions.external.max_results | default 2)
   completer: { |spans: list<string>|
     # if the current command is an alias, get it's expansion
     let expanded_alias = (scope aliases | where name == $spans.0 | get --optional 0.expansion)
@@ -20,58 +23,27 @@ $env.config.completions.external = {
     )
     let cmd_name: string = $spans.0
 
-    let comps = if ($cmd_name in $barg_allowed) {
-      (^$cmd_name @nucomp ...($spans))
-    } else if ([~/.local/comp/ $cmd_name] | path join | path exists) {
-      let comp_f = [~/.local/comp/ $cmd_name] | path join | path expand
-      (^$comp_f ...($spans))
-    } else {
-      # carapace is annoying when it gives no results
-      # and you can't append a file path to the command line
-      (
-        CARAPACE_LENIENT=1 CARAPACE_MATCH=1
-        CARAPACE_BRIDGES='clap,cobra,complete,inshellisense'
-        carapace $cmd_name nushell ...$spans
-      )
-    }
+    let comps = (
+      if ($cmd_name in $__compsrc_exec) {
+        (^$cmd_name @nucomp ...($spans))
+      } else if ([~/.local/comp/ $cmd_name] | path join | path exists) {
+        let comp_f = [~/.local/comp/ $cmd_name] | path join | path expand
+        (^$comp_f ...($spans))
+      } else {
+        # carapace is annoying when it gives no results
+        # and you can't append a file path to the command line
+        (
+          CARAPACE_LENIENT=1 CARAPACE_MATCH=1
+          CARAPACE_BRIDGES='clap,cobra,complete,inshellisense'
+          carapace $cmd_name nushell ...$spans
+        )
+      }
+    )
 
 
     # So, fallback to nushell if its empty
     if $comps != '[]' {
       ($comps | from json)
     }
-
-    # else {
-    #   let files = (
-    #     try { ls ($spans | last) | get name type }
-    #     catch {
-    #       try { ls | get name type } catch { [[],[]] }
-    #     }
-    #   )
-    #   if ($files.0 | length) > 0 {
-    #     $files.0 | enumerate | each {
-    #       let index = $in.index
-    #       {
-    #         display: $in.item, # | str substring ..49 | str replace --regex '^(.{49}).$' "${1}..."
-    #         value: $in.item,
-    #         style: (
-    #           $env.LS_COLORS
-    #           | parse --regex '(?<ft>[^:]*)=(?<cl>[^:]*)'
-    #           | find (
-    #             $files.1
-    #             | get $index
-    #             | split row '.'
-    #             | reverse
-    #             | get 0?
-    #           )
-    #           | get 0?.cl
-    #           | default 32
-    #         )
-    #       }
-    #     }
-    #   } else {
-    #     []
-    #   }
-    # }
   }
 }

@@ -1,0 +1,59 @@
+#!/usr/bin/bash
+# Go (and move) to workspace: workspace [move] <id|name>
+# 🔗 https://github.com/klapptnot/dotf
+
+declare -a names=(
+  'zero' 'one' 'two' 'three' 'four' 'five'
+  'six' 'seven' 'eight' 'nine' 'ten'
+)
+
+declare -A num=(
+  [zero]=0 [one]=1 [two]=2 [three]=3 [four]=4 [five]=5
+  [six]=6 [seven]=7 [eight]=8 [nine]=9 [ten]=10
+)
+
+dispatcher='workspace'
+
+if [[ -z "${2}" ]]; then
+  target="${1#name:}"
+elif [[ "${1}" == 'move' ]]; then
+  dispatcher='movetoworkspace'
+  target="${2#name:}"
+fi
+
+if [[ -z "${target}" ]]; then
+  printf 'usage: %s [move] <id|name>\n' "${0}" >&2
+  exit 1
+fi
+
+wp_id_regex='^[-+]?[0-9]+$'
+{
+  if [[ "${target}" =~ ${wp_id_regex} ]]; then
+    [[ "${target}" == [-+]* ]] && exec hyprctl dispatch "${dispatcher}" "${target}"
+    label="${names[${target}]:-}"
+    if [[ -n "${label}" ]]; then
+      read -r existing < <(hyprctl workspaces -j | jq -r --arg n "${label}" '.[] | select(.name == $n) | .id')
+      if [[ -n "${existing}" ]]; then
+        hyprctl dispatch "${dispatcher}" "name:${label}"
+      else
+        hyprctl dispatch "${dispatcher}" "${target}"
+        hyprctl dispatch renameworkspace "${target}" "${label}"
+      fi
+    else
+      hyprctl dispatch "${dispatcher}" "${target}"
+    fi
+  else
+    read -r existing < <(hyprctl workspaces -j | jq -r --arg n "${target}" '.[] | select(.name == $n) | .id')
+    if [[ -n "${existing}" ]]; then
+      hyprctl dispatch "${dispatcher}" "name:${target}"
+    elif
+      id="${num[${target}]:-}"
+      [[ -n "${id}" ]]
+    then
+      hyprctl dispatch "${dispatcher}" "${id}"
+      hyprctl dispatch renameworkspace "${id}" "${target}"
+    else
+      hyprctl dispatch "${dispatcher}" "${target}"
+    fi
+  fi
+} &> /dev/null

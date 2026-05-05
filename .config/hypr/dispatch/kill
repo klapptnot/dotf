@@ -1,6 +1,21 @@
 #!/usr/bin/bash
-# Kill current window process
+# Kill window process(es): [me|others] (default: me)
 # 🔗 https://github.com/klapptnot/dotf
 
-hyprctl -j activewindow | jq -rM '.pid' | \
-  xargs --no-run-if-empty kill
+case "${1:-me}" in
+  me)
+    hyprctl -j activewindow | jq -rM '.pid' \
+      | xargs --no-run-if-empty kill
+    ;;
+  others)
+    jq -rM --null-input \
+      --argjson c "$(hyprctl clients -j)" \
+      --argjson w "$(hyprctl activeworkspace -j)" \
+      '$c[] | select(.workspace.id == $w.id) | select(.focusHistoryID != 0) | .pid' \
+      | xargs --no-run-if-empty kill
+    ;;
+  *)
+    printf 'usage: kill [me|others]\n' >&2
+    exit 1
+    ;;
+esac

@@ -5,7 +5,7 @@ read -r SESSION_ID < <(loginctl show-user "${USER}" -p Display --value)
 [[ -n "${SESSION_ID}" ]] && export XDG_SESSION_ID="${SESSION_ID}"
 unset SESSION_ID
 
-[ -f ~/.config/hypr/setup-env ] && source ~/.config/hypr/setup-env
+[ -f ~/.config/dotf/setup-env ] && source ~/.config/dotf/setup-env
 
 systemd-run --user --no-block \
   --unit=hyprwm-socket-wait \
@@ -15,7 +15,7 @@ systemd-run --user --no-block \
   --property=Before=graphical-session.target \
   --ignore-failure \
   --collect \
-  nu ~/.config/hypr/socket-wait.nu
+  bash ~/.config/dotf/socket-wait
 
 exec systemd-run --user --pty --wait \
   --unit=hyprwm \

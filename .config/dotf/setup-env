@@ -1,0 +1,70 @@
+#!/usr/bin/bash
+
+if [[ ! -v DFENV_LOADED ]]; then
+  : "${HOME:?no home 😭}"
+
+  declare -a __import_env=()
+
+  function set-env {
+    export "${1}"="${2}"
+    __import_env+=("${1}")
+  }
+
+  # XDG Base Directory Specification
+  set-env XDG_CONFIG_HOME "${XDG_CONFIG_HOME:-${HOME}/.config}"
+  set-env XDG_CACHE_HOME "${XDG_CACHE_HOME:-${HOME}/.cache}"
+  set-env XDG_DATA_HOME "${XDG_DATA_HOME:-${HOME}/.local/share}"
+  set-env XDG_STATE_HOME "${XDG_STATE_HOME:-${HOME}/.local/state}"
+  set-env XDG_RUNTIME_DIR "${XDG_RUNTIME_DIR:-/run/user/${UID:?bro... 🥀}}"
+
+  set-env XDG_DATA_DIRS "${XDG_DATA_DIRS:-${HOME}/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share}"
+  set-env XDG_CONFIG_DIRS "${XDG_CONFIG_DIRS:-/etc/xdg}"
+
+  # Hyprland session variables
+  set-env XDG_SESSION_TYPE "wayland"
+  set-env XDG_SESSION_DESKTOP "Hyprland"
+  set-env XDG_CURRENT_DESKTOP "Hyprland"
+  set-env XDG_BACKEND "wayland"
+  set-env GDK_BACKEND "wayland,x11"
+  set-env WAYLAND_DISPLAY "${WAYLAND_DISPLAY:-wayland-1}"
+
+  # Wayland application support
+  set-env MOZ_ENABLE_WAYLAND 1
+  set-env SDL_VIDEODRIVER wayland
+  set-env CLUTTER_BACKEND wayland
+  set-env QT_QPA_PLATFORM "wayland;xcb"
+
+  # Input method configuration
+  set-env XMODIFIERS "@im=fcitx"
+  set-env GLFW_IM_MODULE "ibus"
+  set-env QT_IM_MODULE "ibus"
+
+  mkdir -p "${XDG_CONFIG_HOME}" "${XDG_CACHE_HOME}" "${XDG_DATA_HOME}" "${XDG_STATE_HOME}" || exec false
+
+  [[ -f ~/.config/env-vars.bash ]] && source ~/.config/env-vars.bash
+
+  if [[ -f ~/.config/path-env.conf ]]; then
+    while read -r line; do
+      [[ "${line}" == "#"* || -z "${line}" ]] && continue
+      if [[ "${line}" == '!'* ]]; then
+        read -r fp < <(realpath "${line:1}" 2> /dev/null) || continue
+        export PATH="${fp}:${PATH}"
+      else
+        read -r fp < <(realpath "${line}" 2> /dev/null) || continue
+        export PATH="${PATH}:${fp}"
+      fi
+    done < ~/.config/path-env.conf
+    __import_env+=("PATH")
+    unset -v line fp
+  fi
+
+  if [[ "${1:-}" != "-s" ]] && [[ "${1:-}" != "--shell" ]]; then
+    systemctl --user import-environment "${__import_env[@]}"
+    unset -f set-env
+    unset __import_env
+    export DFENV_LOADED=1
+  else
+    [[ -v SHELL ]] && exec "${SHELL}"
+    for x in /usr/bin/nu /usr/bin/bash /usr/bin/sh /usr/bin/false; do [[ -x "${x}" ]] && exec "${x}"; done
+  fi
+fi
